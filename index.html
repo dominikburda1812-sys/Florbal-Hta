@@ -2,226 +2,125 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager Pro</title>
+    <title>Floorball Manager 3D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; margin: 0; text-align: center; overflow: hidden; touch-action: none; }
-        .ui-bar { background: #1e293b; padding: 12px; border-bottom: 2px solid #38bdf8; display: flex; justify-content: space-around; font-weight: bold; }
-        .screen { display: none; padding: 20px; height: 80vh; overflow-y: auto; box-sizing: border-box; }
-        .active { display: block; }
-        
-        /* SPODNÍ LIŠTA */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 70px; background: #1e293b; display: flex; justify-content: space-around; align-items: center; border-top: 2px solid #334155; }
-        .nav-item { font-size: 24px; cursor: pointer; color: #94a3b8; flex: 1; padding: 10px; }
-        .nav-item.selected { color: #38bdf8; border-top: 3px solid #38bdf8; background: #0f172a; }
-
-        .card { background: #1e293b; border: 1px solid #475569; border-radius: 15px; padding: 15px; margin: 10px auto; width: 95%; max-width: 320px; }
-        button { background: #38bdf8; border: none; padding: 12px; border-radius: 10px; font-weight: bold; color: #0f172a; width: 100%; margin: 5px 0; }
-        button:disabled { background: #475569; opacity: 0.5; }
-
-        canvas { background: #15803d; border-top: 4px solid white; display: none; width: 100%; height: 400px; }
-        .stats { font-size: 0.8em; color: #38bdf8; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: white; pointer-events: none; }
+        .btn-shot { position: absolute; bottom: 100px; right: 20px; width: 80px; height: 80px; background: rgba(56, 189, 248, 0.8); border-radius: 50%; border: none; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="game-ui">
-    <div class="ui-bar">
-        <span>🪙 <span id="money">100</span></span>
-        <span>⚡ <span id="energy">100</span>%</span>
-        <span>🏆 Lvl <span id="level">1</span></span>
+<div id="ui">
+    <div style="background: rgba(30, 41, 59, 0.8); display: inline-block; padding: 10px; border-radius: 10px;">
+        🪙 <span id="money">100</span> | 🏆 Lvl: <span id="level">1</span>
     </div>
 </div>
 
-<div id="screen-home" class="screen active">
-    <div id="current-player-card" class="card"></div>
-    <button onclick="startMatch()">HRÁT ZÁPAS 🏑</button>
-    <button onclick="startSleep()" id="sleep-btn">NAŘÍDIT SPÁNEK 😴</button>
-    <p id="status-text" style="font-size:0.8em; color:#94a3b8;"></p>
-</div>
-
-<div id="screen-shop" class="screen">
-    <h2>OBCHOD 🛒</h2>
-    <div class="card">
-        <h3>⚡ Energeťák</h3>
-        <p>Okamžitě 100% energie</p>
-        <button onclick="buyEnergy()">KOUPIT (150 🪙)</button>
-    </div>
-    <div class="card">
-        <h3>🏑 Profi Hokejka</h3>
-        <p>Zvýší sílu střely o +20</p>
-        <button id="stick-btn" onclick="buyStick()">KOUPIT (500 🪙)</button>
-    </div>
-</div>
-
-<div id="screen-players" class="screen">
-    <h2>PODPIS HRÁČŮ 📝</h2>
-    <div id="market-container"></div>
-    <p style="font-size:0.7em;">Kliknutím na sekci se trh aktualizuje.</p>
-</div>
-
-<canvas id="canvas"></canvas>
-
-<div class="nav-bar">
-    <div class="nav-item" onclick="switchTab('shop')">🛒</div>
-    <div class="nav-item selected" id="nav-home" onclick="switchTab('home')">🏠</div>
-    <div class="nav-item" onclick="switchTab('players')">🕴️</div>
-</div>
+<button class="btn-shot" id="shotBtn">STŘELA</button>
 
 <script>
-    let gameState = {
-        money: 100,
-        energy: 100,
-        level: 1,
-        myPlayer: { name: "Začátečník", icon: "🧒", shot: 50, speed: 60, club: "Amatéři" },
-        hasStick: false,
-        isSleeping: false
-    };
+    // --- 1. ZÁKLADNÍ 3D SCÉNA ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0f172a);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-    // --- NAVIGACE ---
-    function switchTab(tab) {
-        if(gameState.isSleeping) return alert("Hráč spí, nemůžeš teď nic dělat!");
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('selected'));
-        
-        document.getElementById('screen-' + tab).classList.add('active');
-        if(tab === 'players') refreshMarket();
-        updateUI();
-    }
+    // Světlo
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(5, 10, 7.5);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x404040));
 
-    // --- OBCHOD & MANAŽER ---
-    function buyEnergy() {
-        if(gameState.money >= 150) {
-            gameState.money -= 150;
-            gameState.energy = 100;
-            saveGame(); updateUI(); alert("Hráč je nabitý!");
-        } else alert("Málo peněz!");
-    }
+    // --- 2. HŘIŠTĚ ---
+    const floorGeo = new THREE.PlaneGeometry(20, 40);
+    const floorMat = new THREE.MeshPhongMaterial({ color: 0x15803d });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
 
-    function buyStick() {
-        if(gameState.money >= 500 && !gameState.hasStick) {
-            gameState.money -= 500;
-            gameState.hasStick = true;
-            gameState.myPlayer.shot += 20;
-            saveGame(); updateUI(); alert("Koupena hokejka Oxdog!");
-        }
-    }
+    // Mantinely
+    const wallGeo = new THREE.BoxGeometry(20, 1, 0.5);
+    const wallMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+    const wall = new THREE.Mesh(wallGeo, wallMat);
+    wall.position.z = -20;
+    wall.position.y = 0.5;
+    scene.add(wall);
 
-    function refreshMarket() {
-        const names = ["Lukáš Holub", "Filip Pavel", "Dominik Havlas", "Matěj Jendrišák", "Marek Beneš"];
-        const clubs = ["Mladá Boleslav", "Tatran", "SKV", "Linköping", "Chodov"];
-        const icons = ["🔥", "⚡", "🎯", "🛡️", "🚀"];
-        const container = document.getElementById('market-container');
-        container.innerHTML = '';
-        
-        for(let i=0; i<2; i++) {
-            let p = {
-                name: names[Math.floor(Math.random()*names.length)],
-                club: clubs[Math.floor(Math.random()*clubs.length)],
-                icon: icons[Math.floor(Math.random()*icons.length)],
-                shot: 60 + Math.floor(Math.random()*30),
-                price: 300 + Math.floor(Math.random()*700)
-            };
-            container.innerHTML += `<div class="card">
-                <div style="font-size:30px;">${p.icon}</div>
-                <b>${p.name}</b><br><small>${p.club}</small><br>
-                <button onclick="signPlayer('${p.name}','${p.club}','${p.icon}',${p.shot},${p.price})">PODEPSAT (${p.price} 🪙)</button>
-            </div>`;
-        }
-    }
+    // Branka (zjednodušená 3D)
+    const goalGeo = new THREE.BoxGeometry(4, 2.5, 0.2);
+    const goalMat = new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: true });
+    const goal = new THREE.Mesh(goalGeo, goalMat);
+    goal.position.set(0, 1.25, -19.5);
+    scene.add(goal);
 
-    function signPlayer(n, c, i, s, price) {
-        if(gameState.money >= price) {
-            gameState.money -= price;
-            gameState.myPlayer = { name: n, club: c, icon: i, shot: s, speed: 70 };
-            saveGame(); switchTab('home');
-        } else alert("Nemáš dost zlatáků!");
-    }
+    // --- 3. HRÁČ A MÍČEK ---
+    // Míček
+    const ballGeo = new THREE.SphereGeometry(0.2, 16, 16);
+    const ballMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+    const ball = new THREE.Mesh(ballGeo, ballMat);
+    ball.position.set(0, 0.2, -5);
+    scene.add(ball);
 
-    // --- MINIHRY ---
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    let ball = { x: 80, y: 200, vx: 0, vy: 0 };
-    let stickmanY = 200;
-    let goalie = { y: 150, dir: 1 };
+    // Hráč (Stickman ze 3D kostek)
+    const bodyGeo = new THREE.BoxGeometry(0.5, 1.5, 0.3);
+    const bodyMat = new THREE.MeshPhongMaterial({ color: 0x38bdf8 });
+    const player = new THREE.Mesh(bodyGeo, bodyMat);
+    player.position.set(0, 0.75, -4);
+    scene.add(player);
 
-    function startMatch() {
-        if(gameState.energy < 20) return alert("Hráč je vyčerpaný!");
-        gameState.energy -= 20;
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        canvas.style.display = "block";
-        canvas.width = window.innerWidth;
-        ball.x = 80; ball.vx = 0; ball.vy = 0;
-        requestAnimationFrame(gameLoop);
-    }
+    // Kamera za hráčem
+    camera.position.set(0, 5, 5);
+    camera.lookAt(0, 0, -10);
 
-    canvas.addEventListener('touchmove', (e) => { stickmanY = e.touches[0].clientY - canvas.getBoundingClientRect().top; });
-    canvas.addEventListener('touchstart', (e) => {
-        if(Math.sqrt((80-ball.x)**2 + (stickmanY-ball.y)**2) < 60) {
-            ball.vx = gameState.myPlayer.shot / 6;
-            ball.vy = (Math.random()-0.5)*10;
+    // --- 4. LOGIKA POHYBU ---
+    let ballSpeed = 0;
+    
+    // Ovládání dotykem (pohyb hráče)
+    window.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        const x = (touch.clientX / window.innerWidth) * 2 - 1;
+        player.position.x = x * 5;
+        // Míček následuje hráče, dokud nevystřelí
+        if (ballSpeed === 0) {
+            ball.position.x = player.position.x;
+            ball.position.z = player.position.z - 0.8;
         }
     });
 
-    function gameLoop() {
-        if (canvas.style.display === "none") return;
-        ctx.fillStyle = "#15803d"; ctx.fillRect(0,0,canvas.width, 400);
-        ctx.fillStyle = "white"; ctx.fillRect(canvas.width-30, 100, 30, 200); // Brána
+    // Střela
+    document.getElementById('shotBtn').addEventListener('touchstart', () => {
+        ballSpeed = 0.5;
+    });
 
-        // Brankář
-        let gSpeed = 2 + (gameState.level * 0.5);
-        goalie.y += goalie.dir * gSpeed;
-        if(goalie.y > 260 || goalie.y < 100) goalie.dir *= -1;
-        ctx.fillStyle = "red"; ctx.fillRect(canvas.width-50, goalie.y, 15, 40);
+    // --- 5. ANIMACE ---
+    function animate() {
+        requestAnimationFrame(animate);
 
-        // Stickman
-        ctx.strokeStyle = "white"; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(60, stickmanY-30, 8, 0, Math.PI*2); ctx.stroke(); // hlava
-        ctx.beginPath(); ctx.moveTo(60, stickmanY-22); ctx.lineTo(60, stickmanY+10); ctx.stroke(); // tělo
-        ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(65, stickmanY+5); ctx.lineTo(85, stickmanY+20); ctx.stroke(); // hokejka
+        // Pohyb míčku po střele
+        if (ballSpeed > 0) {
+            ball.position.z -= ballSpeed;
+            // Gól!
+            if (ball.position.z < -19.5 && Math.abs(ball.position.x) < 2) {
+                alert("GÓÓÓL VE 3D!");
+                ball.position.set(player.position.x, 0.2, player.position.z - 0.8);
+                ballSpeed = 0;
+            }
+            // Mimo
+            if (ball.position.z < -25) {
+                ball.position.set(player.position.x, 0.2, player.position.z - 0.8);
+                ballSpeed = 0;
+            }
+        }
 
-        // Míček s dírkami
-        ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(ball.x, ball.y, 10, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "#ddd"; for(let i=0; i<5; i++) { ctx.beginPath(); ctx.arc(ball.x+Math.cos(i)*5, ball.y+Math.sin(i)*5, 2, 0, Math.PI*2); ctx.fill(); }
-
-        ball.x += ball.vx; ball.y += ball.vy;
-        ball.vx *= 0.98; ball.vy *= 0.98;
-
-        if (ball.x > canvas.width-30 && ball.y > 100 && ball.y < 300) {
-            gameState.money += 50; gameState.level++; saveGame();
-            alert("GÓÓÓL! +50 🪙"); canvas.style.display="none"; switchTab('home');
-        } else if (ball.x > canvas.width || ball.x < 0) { ball.x = 80; ball.vx = 0; }
-        
-        requestAnimationFrame(gameLoop);
+        renderer.render(scene, camera);
     }
+    animate();
 
-    function startSleep() {
-        gameState.isSleeping = true; updateUI();
-        let s = 60; // Zkráceno pro test na 1 minutu
-        let t = setInterval(() => {
-            s--; document.getElementById('status-text').innerText = `Hráč spí: ${s}s`;
-            if(s<=0) { clearInterval(t); gameState.energy=100; gameState.isSleeping=false; saveGame(); updateUI(); document.getElementById('status-text').innerText=""; }
-        }, 1000);
-    }
-
-    function updateUI() {
-        document.getElementById('money').innerText = gameState.money;
-        document.getElementById('energy').innerText = Math.floor(gameState.energy);
-        document.getElementById('level').innerText = gameState.level;
-        document.getElementById('current-player-card').innerHTML = `
-            <div style="font-size:40px;">${gameState.myPlayer.icon}</div>
-            <h3>${gameState.myPlayer.name}</h3>
-            <p class="stats">${gameState.myPlayer.club} | Střela: ${gameState.myPlayer.shot}</p>
-        `;
-        document.getElementById('stick-btn').disabled = gameState.hasStick;
-    }
-
-    function saveGame() { localStorage.setItem('floorballFinalSave', JSON.stringify(gameState)); }
-    function loadGame() {
-        const saved = localStorage.getItem('floorballFinalSave');
-        if(saved) { gameState = JSON.parse(saved); updateUI(); }
-    }
-
-    loadGame();
 </script>
 </body>
 </html>
+ 
