@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Floorball Life | Manažer</title>
+    <style>
+        /* MODERNÍ DESIGN */
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: white; margin: 0; text-align: center; overflow: hidden; touch-action: none; }
+        .ui-bar { background: #1e293b; padding: 12px; border-bottom: 2px solid #38bdf8; display: flex; justify-content: space-around; font-weight: bold; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        .screen { display: none; padding: 20px; height: 85vh; overflow-y: auto; }
+        .active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* ÚVODNÍ OBRAZOVKA */
+        #splash-screen { background: radial-gradient(circle, #1e293b 0%, #0f172a 100%); }
+        .logo-box { border: 4px solid #38bdf8; padding: 20px; border-radius: 20px; box-shadow: 0 0 20px #38bdf8; margin-bottom: 30px; }
+        .logo-text { font-size: 2.5em; font-weight: 900; letter-spacing: 2px; color: #38bdf8; text-transform: uppercase; }
+        
+        /* KARTY A TLAČÍTKA */
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 15px; padding: 15px; margin: 10px auto; width: 90%; max-width: 320px; transition: transform 0.2s; }
+        .card:active { transform: scale(0.98); }
+        button { background: #38bdf8; border: none; padding: 15px; border-radius: 10px; font-weight: bold; color: #0f172a; cursor: pointer; width: 100%; margin: 8px 0; text-transform: uppercase; letter-spacing: 1px; }
+        button:disabled { background: #475569; color: #94a3b8; }
+        
+        #canvas { background: #15803d; border-top: 4px solid white; display: none; width: 100%; }
+        .log { background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; font-size: 0.85em; margin-top: 15px; width: 90%; }
+    </style>
+</head>
+<body>
+
+<div id="game-ui" style="display:none;">
+    <div class="ui-bar">
+        <span>💰 <span id="money">500</span> Kč</span>
+        <span>⚡ <span id="energy">100</span>%</span>
+        <span>🥤 <span id="stock">5</span>ks</span>
+    </div>
+</div>
+
+<div id="splash-screen" class="screen active">
+    <div class="logo-box">
+        <div class="logo-text">FLOORBALL<br>LIFE</div>
+    </div>
+    <p>Tvůj příběh začíná v šatně...</p>
+    <button onclick="enterGame()" style="width: 200px; font-size: 1.2em;">START</button>
+</div>
+
+<div id="start-screen" class="screen">
+    <h2>Vyber svého kapitána</h2>
+    <div id="starters-container"></div>
+</div>
+
+<div id="main-screen" class="screen">
+    <div id="player-info" class="card"></div>
+    <button id="match-btn" onclick="startMatch()">DO ZÁPASU 🏑</button>
+    <button id="sleep-btn" onclick="startSleep()">SPÁNEK (5 min)</button>
+    <hr style="width: 100%; border: 0.5px solid #334155; margin: 20px 0;">
+    <h3>Obchod</h3>
+    <button onclick="buyDrink()">Koupit Energiťák (100 Kč)</button>
+    <div id="status-log" class="log">Připrav se na sezónu!</div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    // --- DATA A LOGIKA ---
+    let money = 500;
+    let energy = 100;
+    let drinksInStock = 5;
+    let myPlayer = null;
+    let drinksThisMatch = 0;
+    let energyDebt = false;
+
+    const starters = [
+        { name: "Mirek 'Beton'", shot: 45, speed: 75, story: "Dříč z vesnice, který nikdy neuhne ze souboje." },
+        { name: "Erik 'Laser'", shot: 88, speed: 35, story: "Talent, který raději pije colu, než běhá." },
+        { name: "Adam 'Vyčůraný'", shot: 62, speed: 62, story: "Zná všechny kličky na hřišti i mimo něj." }
+    ];
+
+    function enterGame() {
+        showScreen('start-screen');
+        document.getElementById('game-ui').style.display = 'block';
+        initStarters();
+    }
+
+    function initStarters() {
+        const container = document.getElementById('starters-container');
+        container.innerHTML = '';
+        starters.forEach((p, i) => {
+            container.innerHTML += `
+                <div class="card">
+                    <b>${p.name}</b>
+                    <p class="story">"${p.story}"</p>
+                    <button onclick="pickPlayer(${i})">Vybrat</button>
+                </div>`;
+        });
+    }
+
+    function pickPlayer(i) {
+        myPlayer = {...starters[i]};
+        showScreen('main-screen');
+        updateUI();
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        if(id !== 'none') document.getElementById(id).classList.add('active');
+        document.getElementById('canvas').style.display = "none";
+    }
+
+    function updateUI() {
+        document.getElementById('money').innerText = money;
+        document.getElementById('energy').innerText = Math.floor(energy);
+        document.getElementById('stock').innerText = drinksInStock;
+        if(myPlayer) {
+            document.getElementById('player-info').innerHTML = `
+                <h3 style="margin:0; color:#38bdf8;">${myPlayer.name}</h3>
+                <small>Střela: ${myPlayer.shot} | Rychlost: ${myPlayer.speed}</small>
+            `;
+        }
+    }
+
+    // --- ZÁPAS ---
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let ball = { x: 50, y: 150, vx: 0, vy: 0 };
+    let pPos = { x: 50, y: 150 };
+
+    function startMatch() {
+        if (energy < 30) return alert("Jsi moc unavený!");
+        energy -= 30;
+        showScreen('none');
+        canvas.style.display = "block";
+        canvas.width = window.innerWidth;
+        canvas.height = 350;
+        ball.x = 50;
+        requestAnimationFrame(gameLoop);
+    }
+
+    canvas.addEventListener('touchstart', (e) => {
+        let t = e.touches[0];
+        let rect = canvas.getBoundingClientRect();
+        pPos.x = t.clientX - rect.left;
+        pPos.y = t.clientY - rect.top;
+        
+        // Výstřel při kliknutí poblíž míčku
+        let dist = Math.sqrt((pPos.x-ball.x)**2 + (pPos.y-ball.y)**2);
+        if (dist < 50) {
+            ball.vx = myPlayer.shot / 8;
+            ball.vy = (Math.random() - 0.5) * 6;
+        }
+    });
+
+    function gameLoop() {
+        if (canvas.style.display === "none") return;
+        ctx.fillStyle = "#15803d"; ctx.fillRect(0,0,canvas.width, canvas.height);
+        ctx.fillStyle = "white"; ctx.fillRect(canvas.width-20, 125, 20, 100); // Branka
+        
+        ball.x += ball.vx; ball.y += ball.vy;
+        ball.vx *= 0.98; ball.vy *= 0.98;
+        
+        ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(ball.x, ball.y, 8, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#38bdf8"; ctx.beginPath(); ctx.arc(pPos.x, pPos.y, 20, 0, Math.PI*2); ctx.fill();
+
+        if (ball.x > canvas.width - 20 && ball.y > 125 && ball.y < 225) {
+            money += 200;
+            alert("GÓÓÓL! +200 Kč");
+            showScreen('main-screen');
+            updateUI();
+        } else if (ball.x > canvas.width || ball.x < 0 || ball.y < 0 || ball.y > canvas.height) {
+            ball.x = 50; ball.vx = 0; ball.vy = 0;
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    function buyDrink() {
+        if (drinksInStock > 0 && money >= 100) {
+            money -= 100;
+            drinksInStock--;
+            myPlayer.shot += 5;
+            updateUI();
+            alert("Vypito! Tvá střela je teď silnější.");
+        }
+    }
+
+    function startSleep() {
+        alert("Hráč jde spát na 5 minut. Nech aplikaci běžet na pozadí!");
+        // Zjednodušená simulace pro prototyp
+        setTimeout(() => {
+            energy = 100;
+            updateUI();
+            alert("Hráč je vzhůru!");
+        }, 300000); 
+    }
+</script>
+</body>
+</html>
