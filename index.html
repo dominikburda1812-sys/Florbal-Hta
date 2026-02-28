@@ -2,125 +2,18 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager 3D</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>Floorball Manager PRO</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
-        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: white; pointer-events: none; }
-        .btn-shot { position: absolute; bottom: 100px; right: 20px; width: 80px; height: 80px; background: rgba(56, 189, 248, 0.8); border-radius: 50%; border: none; color: white; font-weight: bold; }
-    </style>
-</head>
-<body>
+        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; text-align: center; overflow: hidden; touch-action: none; }
+        
+        /* HORNÍ LIŠTA */
+        .ui-bar { background: var(--card); padding: 15px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-around; font-weight: bold; font-size: 1.1em; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        
+        /* OBRAZOVKY */
+        .screen { display: none; padding: 20px; height: 80vh; overflow-y: auto; box-sizing: border-box; padding-bottom: 100px; }
+        .active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-<div id="ui">
-    <div style="background: rgba(30, 41, 59, 0.8); display: inline-block; padding: 10px; border-radius: 10px;">
-        🪙 <span id="money">100</span> | 🏆 Lvl: <span id="level">1</span>
-    </div>
-</div>
-
-<button class="btn-shot" id="shotBtn">STŘELA</button>
-
-<script>
-    // --- 1. ZÁKLADNÍ 3D SCÉNA ---
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f172a);
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    // Světlo
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(5, 10, 7.5);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0x404040));
-
-    // --- 2. HŘIŠTĚ ---
-    const floorGeo = new THREE.PlaneGeometry(20, 40);
-    const floorMat = new THREE.MeshPhongMaterial({ color: 0x15803d });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    scene.add(floor);
-
-    // Mantinely
-    const wallGeo = new THREE.BoxGeometry(20, 1, 0.5);
-    const wallMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
-    const wall = new THREE.Mesh(wallGeo, wallMat);
-    wall.position.z = -20;
-    wall.position.y = 0.5;
-    scene.add(wall);
-
-    // Branka (zjednodušená 3D)
-    const goalGeo = new THREE.BoxGeometry(4, 2.5, 0.2);
-    const goalMat = new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: true });
-    const goal = new THREE.Mesh(goalGeo, goalMat);
-    goal.position.set(0, 1.25, -19.5);
-    scene.add(goal);
-
-    // --- 3. HRÁČ A MÍČEK ---
-    // Míček
-    const ballGeo = new THREE.SphereGeometry(0.2, 16, 16);
-    const ballMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
-    const ball = new THREE.Mesh(ballGeo, ballMat);
-    ball.position.set(0, 0.2, -5);
-    scene.add(ball);
-
-    // Hráč (Stickman ze 3D kostek)
-    const bodyGeo = new THREE.BoxGeometry(0.5, 1.5, 0.3);
-    const bodyMat = new THREE.MeshPhongMaterial({ color: 0x38bdf8 });
-    const player = new THREE.Mesh(bodyGeo, bodyMat);
-    player.position.set(0, 0.75, -4);
-    scene.add(player);
-
-    // Kamera za hráčem
-    camera.position.set(0, 5, 5);
-    camera.lookAt(0, 0, -10);
-
-    // --- 4. LOGIKA POHYBU ---
-    let ballSpeed = 0;
-    
-    // Ovládání dotykem (pohyb hráče)
-    window.addEventListener('touchmove', (e) => {
-        const touch = e.touches[0];
-        const x = (touch.clientX / window.innerWidth) * 2 - 1;
-        player.position.x = x * 5;
-        // Míček následuje hráče, dokud nevystřelí
-        if (ballSpeed === 0) {
-            ball.position.x = player.position.x;
-            ball.position.z = player.position.z - 0.8;
-        }
-    });
-
-    // Střela
-    document.getElementById('shotBtn').addEventListener('touchstart', () => {
-        ballSpeed = 0.5;
-    });
-
-    // --- 5. ANIMACE ---
-    function animate() {
-        requestAnimationFrame(animate);
-
-        // Pohyb míčku po střele
-        if (ballSpeed > 0) {
-            ball.position.z -= ballSpeed;
-            // Gól!
-            if (ball.position.z < -19.5 && Math.abs(ball.position.x) < 2) {
-                alert("GÓÓÓL VE 3D!");
-                ball.position.set(player.position.x, 0.2, player.position.z - 0.8);
-                ballSpeed = 0;
-            }
-            // Mimo
-            if (ball.position.z < -25) {
-                ball.position.set(player.position.x, 0.2, player.position.z - 0.8);
-                ballSpeed = 0;
-            }
-        }
-
-        renderer.render(scene, camera);
-    }
-    animate();
-
-</script>
-</body>
-</html>
- 
+        /* KARTY A DESIGN */
+        .card { background: var(--card); border: 1px solid #334155; border-radius: 20px; padding: 20px; margin: 15px auto; width: 90%; max-width: 350px; transition: transform 0
