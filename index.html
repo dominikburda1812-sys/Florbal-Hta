@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!D<!DOCTYPE html>
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -16,4 +16,266 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* KARTY A DESIGN */
-        .card { background: var(--card); border: 1px solid #334155; border-radius: 20px; padding: 20px; margin: 15px auto; width: 90%; max-width: 350px; transition: transform 0
+        .card { background: var(--card); border: 1px solid #334155; border-radius: 20px; padding: 20px; margin: 15px auto; width: 90%; max-width: 350px; transition: transform 0.2s; }
+        .avatar { font-size: 50px; margin-bottom: 10px; display: inline-block; animation: bounce 2s infinite ease-in-out; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        .club-tag { font-size: 0.75em; font-weight: bold; padding: 5px 12px; border-radius: 15px; text-transform: uppercase; margin-bottom: 10px; display: inline-block; }
+        .boleslav { background: #1d4ed8; color: white; }
+        .tatran { background: #dc2626; color: white; }
+        .skv { background: #fbbf24; color: black; }
+
+        button { background: var(--primary); border: none; padding: 15px; border-radius: 12px; font-weight: bold; color: #0f172a; width: 100%; margin: 10px 0; font-size: 1em; cursor: pointer; }
+        button:disabled { background: #475569; opacity: 0.6; cursor: not-allowed; }
+
+        /* SPODNÍ NAVIGACE */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 75px; background: var(--card); display: flex; justify-content: space-around; align-items: center; border-top: 2px solid #334155; z-index: 100; }
+        .nav-item { font-size: 28px; cursor: pointer; color: #64748b; flex: 1; transition: 0.3s; }
+        .nav-item.selected { color: var(--primary); transform: translateY(-5px); }
+
+        /* MINIHRY */
+        canvas { background: #15803d; border-top: 5px solid white; border-bottom: 5px solid white; display: none; width: 100%; height: 400px; }
+        .timer-box { color: #f87171; font-weight: bold; font-size: 0.9em; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="game-ui" style="display:none;">
+    <div class="ui-bar">
+        <span>🪙 <span id="money">100</span></span>
+        <span>⚡ <span id="energy">100</span>%</span>
+        <span>🏆 Lvl <span id="level">1</span></span>
+    </div>
+</div>
+
+<div id="screen-start" class="screen active">
+    <h1 style="color:var(--primary)">FLOORBALL MANAGER</h1>
+    <p>Podepiš svou první hvězdu:</p>
+    <div id="starter-players"></div>
+</div>
+
+<div id="screen-home" class="screen">
+    <div id="current-player-card" class="card"></div>
+    <button onclick="startMatch()">HRÁT ZÁPAS 🏑</button>
+    <button onclick="startSleep()" id="sleep-btn">NAŘÍDIT SPÁNEK 😴</button>
+    <p id="status-text" style="font-weight:bold; color:var(--primary);"></p>
+</div>
+
+<div id="screen-shop" class="screen">
+    <h2>OBCHOD 🛒</h2>
+    <div class="timer-box">Nová nabídka za: <span id="shop-timer">60</span>s</div>
+    <div id="shop-items"></div>
+    <div class="card">
+        <h3>⚡ Energeťák</h3>
+        <p>Okamžitý restart kondice na 100%</p>
+        <button onclick="buyEnergy()">KOUPIT (150 🪙)</button>
+    </div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<div id="main-nav" class="nav-bar" style="display:none;">
+    <div class="nav-item" id="nav-shop" onclick="switchTab('shop')">🛒</div>
+    <div class="nav-item selected" id="nav-home" onclick="switchTab('home')">🏠</div>
+    <div class="nav-item" onclick="if(confirm('Opravdu resetovat celou kariéru?')){localStorage.clear();location.reload();}">⚙️</div>
+</div>
+
+<script>
+    // --- STAV HRY ---
+    let gameState = {
+        money: 100, energy: 100, level: 1,
+        myPlayer: null, isSleeping: false
+    };
+
+    const initialPlayers = [
+        { name: "Lukáš Holub", club: "Mladá Boleslav", class: "boleslav", icon: "🏃‍♂️", shot: 65 },
+        { name: "Filip Pavel", club: "Tatran Střešovice", class: "tatran", icon: "🧠", shot: 80 },
+        { name: "Dominik Havlas", club: "SKV", class: "skv", icon: "🎯", shot: 95 }
+    ];
+
+    const brands = ["Oxdog", "Fat Pipe", "Salming", "Unihoc", "Exel"];
+
+    // --- OBCHODNÍ SYSTÉM (Reset 60s) ---
+    let timeLeft = 60;
+    setInterval(() => {
+        if(gameState.myPlayer) {
+            timeLeft--;
+            if(document.getElementById('shop-timer')) document.getElementById('shop-timer').innerText = timeLeft;
+            if(timeLeft <= 0) { timeLeft = 60; generateNewShop(); }
+        }
+    }, 1000);
+
+    function generateNewShop() {
+        const container = document.getElementById('shop-items');
+        if(!container) return;
+        let brand = brands[Math.floor(Math.random()*brands.length)];
+        let bonus = 5 + Math.floor(Math.random()*20);
+        let price = 100 + (bonus * 15);
+        
+        container.innerHTML = `
+            <div class="card">
+                <h3>🏑 Hokejka ${brand}</h3>
+                <p>Bonus k síle: +${bonus}</p>
+                <button onclick="buyItem(${bonus}, ${price})">KOUPIT (${price} 🪙)</button>
+            </div>
+        `;
+    }
+
+    function buyItem(bonus, price) {
+        if(gameState.money >= price) {
+            gameState.money -= price;
+            gameState.myPlayer.shot += bonus;
+            saveGame(); updateUI(); alert("Vybavení zakoupeno!");
+            generateNewShop();
+        } else alert("Nedostatek zlatáků!");
+    }
+
+    function buyEnergy() {
+        if(gameState.money >= 150) {
+            gameState.money -= 150; gameState.energy = 100;
+            saveGame(); updateUI();
+        } else alert("Málo peněz!");
+    }
+
+    // --- CORE FUNKCE ---
+    function init() {
+        const container = document.getElementById('starter-players');
+        initialPlayers.forEach((p, i) => {
+            container.innerHTML += `
+                <div class="card">
+                    <div class="avatar">${p.icon}</div><br>
+                    <div class="club-tag ${p.class}">${p.club}</div>
+                    <h3>${p.name}</h3>
+                    <button onclick="selectHero(${i})">ZVOLIT MANAŽEREM</button>
+                </div>`;
+        });
+        loadGame();
+    }
+
+    function selectHero(i) {
+        gameState.myPlayer = initialPlayers[i];
+        saveGame();
+        document.getElementById('screen-start').classList.remove('active');
+        document.getElementById('game-ui').style.display = 'block';
+        document.getElementById('main-nav').style.display = 'flex';
+        generateNewShop();
+        switchTab('home');
+    }
+
+    function switchTab(tab) {
+        if(gameState.isSleeping) return;
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('selected'));
+        document.getElementById('screen-' + tab).classList.add('active');
+        document.getElementById('nav-' + tab).classList.add('selected');
+        updateUI();
+    }
+
+    // --- MINIHRY (STICKMAN & BALL) ---
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let ball = { x: 80, y: 200, vx: 0, vy: 0 };
+    let stickmanY = 200;
+    let goalie = { y: 200, dir: 1 };
+
+    function startMatch() {
+        if(gameState.energy < 20) return alert("Hráč je vyčerpaný! Potřebuje spánek.");
+        gameState.energy -= 20;
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        canvas.style.display = "block";
+        canvas.width = window.innerWidth;
+        ball.x = 80; ball.y = 200; ball.vx = 0; ball.vy = 0;
+        requestAnimationFrame(gameLoop);
+    }
+
+    canvas.addEventListener('touchmove', (e) => { 
+        stickmanY = e.touches[0].clientY - canvas.getBoundingClientRect().top; 
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+        if(Math.sqrt((80-ball.x)**2 + (stickmanY-ball.y)**2) < 70) {
+            ball.vx = gameState.myPlayer.shot / 5;
+            ball.vy = (Math.random()-0.5)*15;
+        }
+    });
+
+    function gameLoop() {
+        if (canvas.style.display === "none") return;
+        ctx.fillStyle = "#15803d"; ctx.fillRect(0,0,canvas.width, 400); // Hřiště
+        
+        // Branka na středu
+        ctx.fillStyle = "white"; ctx.fillRect(canvas.width-30, 125, 30, 150); 
+
+        // Brankář
+        let gSpeed = 2.5 + (gameState.level * 0.4);
+        goalie.y += goalie.dir * gSpeed;
+        if(goalie.y > 240 || goalie.y < 135) goalie.dir *= -1;
+        ctx.fillStyle = "red"; ctx.fillRect(canvas.width-55, goalie.y, 18, 45);
+
+        // Stickman
+        ctx.strokeStyle = "white"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(60, stickmanY-35, 12, 0, Math.PI*2); ctx.stroke(); // hlava
+        ctx.beginPath(); ctx.moveTo(60, stickmanY-23); ctx.lineTo(60, stickmanY+15); ctx.stroke(); // tělo
+        ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(60, stickmanY+5); ctx.lineTo(90, stickmanY+25); ctx.stroke(); // hokejka
+
+        // Míček s dírkami
+        ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(ball.x, ball.y, 11, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#ccc"; for(let i=0; i<6; i++) { ctx.beginPath(); ctx.arc(ball.x+Math.cos(i)*6, ball.y+Math.sin(i)*6, 2, 0, Math.PI*2); ctx.fill(); }
+
+        ball.x += ball.vx; ball.y += ball.vy;
+        ball.vx *= 0.985; ball.vy *= 0.985;
+
+        // Logika gólu
+        if (ball.x > canvas.width-30 && ball.y > 125 && ball.y < 275) {
+            gameState.money += 50; gameState.level++; saveGame();
+            alert("GÓÓÓL! +50 🪙"); canvas.style.display="none"; switchTab('home');
+        } else if (ball.x > canvas.width || ball.x < 0 || ball.y < 0 || ball.y > 400) { 
+            ball.x = 80; ball.vx = 0; ball.vy = 0; 
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    // --- POMOCNÉ FUNKCE ---
+    function updateUI() {
+        document.getElementById('money').innerText = gameState.money;
+        document.getElementById('energy').innerText = Math.floor(gameState.energy);
+        document.getElementById('level').innerText = gameState.level;
+        if(gameState.myPlayer) {
+            document.getElementById('current-player-card').innerHTML = `
+                <div class="club-tag ${gameState.myPlayer.class}">${gameState.myPlayer.club}</div>
+                <div class="avatar">${gameState.myPlayer.icon}</div>
+                <h3>${gameState.myPlayer.name}</h3>
+                <p>Manažerský level: ${gameState.level}<br>Síla střely: ${gameState.myPlayer.shot}</p>
+            `;
+        }
+    }
+
+    function startSleep() {
+        gameState.isSleeping = true;
+        let s = 30;
+        let t = setInterval(() => {
+            s--; document.getElementById('status-text').innerText = `Hráč spí: ${s}s`;
+            if(s<=0) { clearInterval(t); gameState.energy=100; gameState.isSleeping=false; saveGame(); updateUI(); document.getElementById('status-text').innerText=""; }
+        }, 1000);
+    }
+
+    function saveGame() { localStorage.setItem('FloorballManager_Final', JSON.stringify(gameState)); }
+    function loadGame() {
+        const saved = localStorage.getItem('FloorballManager_Final');
+        if(saved) {
+            gameState = JSON.parse(saved);
+            if(gameState.myPlayer) {
+                document.getElementById('screen-start').classList.remove('active');
+                document.getElementById('game-ui').style.display = 'block';
+                document.getElementById('main-nav').style.display = 'flex';
+                generateNewShop();
+                switchTab('home');
+            }
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
+
