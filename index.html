@@ -292,7 +292,7 @@
         cont.innerHTML = "";
         db.shopItems.forEach((item, i) => {
             cont.innerHTML += `<div class="card">
-                ${item.type === 'energy' ? `<h3>⚡ ENERGEŤÁK</h3>` : `<h3>🏃 ${item.name}</h3><p>Statistiky: ${item.stat}</p>`}
+                ${item.type === 'energy' ? `<h3>⚡ ENERGETICKÝ NÁPOJ</h3>` : `<h3>🏃 ${item.name}</h3><p>Statistiky: ${item.stat}</p>`}
                 <button onclick="buyShop(${i})">KOUPIT (${item.price} 🪙)</button>
             </div>`;
         });
