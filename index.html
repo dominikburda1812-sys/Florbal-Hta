@@ -2,30 +2,24 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager | Tutorial Edition</title>
+    <title>Floorball Manager | Custom Team Edition</title>
     <style>
         :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; text-align: center; overflow: hidden; }
         
-        .ui-bar { background: var(--card); padding: 10px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-around; font-weight: bold; }
+        .ui-bar { background: var(--card); padding: 10px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-around; font-weight: bold; font-size: 0.9em; }
         .screen { display: none; padding: 15px; height: 82vh; overflow-y: auto; padding-bottom: 80px; }
         .active { display: block; }
 
-        /* TUTORIÁL MODAL */
-        #tutorial-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.85); z-index: 1000; display: none;
-            justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;
-        }
-        .tut-box { background: var(--card); border: 2px solid var(--primary); padding: 20px; border-radius: 20px; max-width: 400px; }
-
         .card { background: var(--card); border: 1px solid #334155; border-radius: 12px; padding: 10px; margin: 8px auto; width: 90%; max-width: 350px; }
-        .energy-bar { background: #475569; height: 8px; border-radius: 4px; margin-top: 5px; overflow: hidden; }
-        .energy-fill { background: #22c55e; height: 100%; transition: width 0.3s; }
+        
+        /* FORMULÁŘ PRO TÝM */
+        .setup-input { display: block; width: 85%; margin: 8px auto; padding: 12px; border-radius: 8px; border: 1px solid var(--primary); background: #1e293b; color: white; }
 
-        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 65px; background: var(--card); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #334155; z-index: 100; }
-        .nav-item { font-size: 24px; color: #64748b; cursor: pointer; flex: 1; }
-        .nav-item.selected { color: var(--primary); }
+        /* BATOH */
+        .inventory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; background: #0f172a; padding: 10px; border-radius: 10px; border: 1px solid var(--primary); }
+        .inv-slot { aspect-ratio: 1; background: #1e293b; border: 1px dashed #475569; border-radius: 5px; display: flex; justify-content: center; align-items: center; font-size: 20px; }
+        .inv-filled { border-style: solid; border-color: var(--primary); background: #334155; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.8em; }
         th { border-bottom: 2px solid var(--primary); padding: 5px; }
@@ -35,43 +29,34 @@
         button { background: var(--primary); border: none; padding: 12px; border-radius: 8px; font-weight: bold; color: #0f172a; width: 100%; margin: 5px 0; cursor: pointer; }
         button:disabled { background: #475569; opacity: 0.5; }
         
-        input { padding: 10px; border-radius: 8px; border: none; width: 80%; margin: 10px 0; background: #334155; color: white; }
-        .pfp-grid { display: flex; justify-content: center; gap: 10px; margin: 10px; }
-        .pfp-opt { font-size: 40px; cursor: pointer; padding: 5px; border: 2px solid transparent; border-radius: 10px; }
-        .pfp-opt.selected { border-color: var(--primary); }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 65px; background: var(--card); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #334155; z-index: 100; }
+        .nav-item { font-size: 24px; color: #64748b; cursor: pointer; flex: 1; }
+        .nav-item.selected { color: var(--primary); }
 
         #sim-canvas { background: #15803d; border: 2px solid white; display: none; margin: 10px auto; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div id="tutorial-overlay">
-    <div class="tut-box">
-        <h3 id="tut-title">Vítej v lize!</h3>
-        <p id="tut-text">Jako manažer máš na starost celý tým. Pojďme si ukázat, jak na to.</p>
-        <button onclick="nextTutorial()">POKRAČOVAT</button>
-    </div>
-</div>
-
 <div id="top-ui" style="display:none" class="ui-bar">
     <span>🪙 <span id="money">0</span></span>
-    <span>👥 <span id="player-count">0</span>/6</span>
+    <span>📊 Tým: <span id="team-avg">0</span></span>
+    <span>👥 <span id="player-count">0</span>/20</span>
 </div>
 
 <div id="scr-reg" class="screen active">
-    <h1>FLOORBALL MANAGER</h1>
-    <input type="text" id="mgr-name" placeholder="Tvé jméno...">
-    <div class="pfp-grid">
-        <span class="pfp-opt" onclick="selectPfp(this, '👔')">👔</span>
-        <span class="pfp-opt" onclick="selectPfp(this, '🧢')">🧢</span>
-        <span class="pfp-opt" onclick="selectPfp(this, '🕶️')">🕶️</span>
+    <h1>VYTVOŘ SVŮJ TÝM</h1>
+    <p>Zadej jméno manažera a svých 6 hráčů:</p>
+    <input type="text" id="mgr-name" class="setup-input" placeholder="Jméno Manažera">
+    <div id="player-inputs">
+        <input type="text" class="setup-input p-name" placeholder="Hráč 1">
+        <input type="text" class="setup-input p-name" placeholder="Hráč 2">
+        <input type="text" class="setup-input p-name" placeholder="Hráč 3">
+        <input type="text" class="setup-input p-name" placeholder="Hráč 4">
+        <input type="text" class="setup-input p-name" placeholder="Hráč 5">
+        <input type="text" class="setup-input p-name" placeholder="Hráč 6">
     </div>
-    <div id="starter-choice" style="display:none">
-        <p>Vyber si svou první hvězdu:</p>
-        <button onclick="pickStarter(0)">Lukáš Holub</button>
-        <button onclick="pickStarter(1)">Filip Pavel</button>
-        <button onclick="pickStarter(2)">Dominik Havlas</button>
-    </div>
+    <button onclick="createTeam()">ZALOŽIT KLUB</button>
 </div>
 
 <div id="scr-sleep" class="screen">
@@ -80,34 +65,39 @@
 </div>
 
 <div id="scr-match" class="screen">
-    <h2 id="match-header">LIGOVÁ TABULKA 🏆</h2>
-    <div class="card" style="width:95%; max-width:none; overflow-x: auto;">
+    <h2>LIGOVÁ TABULKA 🏆</h2>
+    <div class="card" style="width:95%; max-width:none;">
         <table id="league-table">
-            <thead>
-                <tr><th>#</th><th>Tým</th><th>Z</th><th>V</th><th>B</th></tr>
-            </thead>
+            <thead><tr><th>#</th><th>Tým</th><th>Síla</th><th>B</th></tr></thead>
             <tbody id="league-body"></tbody>
         </table>
     </div>
     <canvas id="sim-canvas" width="300" height="200"></canvas>
-    <button id="match-btn" onclick="runMatch()">HRÁT ZÁPAS (30s)</button>
+    <button id="match-btn" onclick="runMatch()">HRÁT ZÁPAS (+500 🪙)</button>
     <p id="match-timer-text" style="font-size:0.7em; color:#94a3b8;"></p>
 </div>
 
 <div id="scr-shop" class="screen">
     <h2>OBCHOD 🛒</h2>
-    <p style="font-size:0.7em">Nová nabídka za: <span id="shop-timer">60</span>s</p>
+    <div class="card" style="background: #1e3a8a;">
+        <p>Úroveň obchodu: <span id="shop-lvl">1</span></p>
+        <p>Max. stat hráče: <span id="shop-max-stat">10</span></p>
+        <button onclick="upgradeShop()" id="up-shop-btn">Vylepšit (50 000 🪙)</button>
+    </div>
     <div id="shop-list"></div>
 </div>
 
 <div id="scr-profile" class="screen">
     <h2 id="prof-name">Manažer</h2>
     <div class="card">
-        <p>Získané zlatáky: <span id="stat-earned">0</span></p>
-        <p>Utracené zlatáky: <span id="stat-spent">0</span></p>
-        <p>Hráčů v týmu: <span id="stat-count">0</span></p>
+        <h3>🎒 BATOH (INVENTÁŘ)</h3>
+        <p style="font-size: 0.7em;">Místo: <span id="inv-count">0</span> / 20</p>
+        <div class="inventory-grid" id="backpack"></div>
     </div>
-    <button style="background:#ef4444; color: white;" onclick="resetGame()">RESET HRY</button>
+    <div class="card">
+        <p>Zlatáky celkem: <span id="stat-earned">0</span></p>
+        <button style="background:#ef4444; color: white;" onclick="resetGame()">RESET HRY</button>
+    </div>
 </div>
 
 <div id="nav" class="nav-bar" style="display:none">
@@ -119,141 +109,131 @@
 
 <script>
     let db = {
-        name: "", pfp: "", money: 10000, earned: 10000, spent: 0,
-        players: [], shopItems: [], lastMatch: 0, shopReset: 60,
-        tutorialStep: 0,
+        name: "", money: 10000, earned: 10000, shopLvl: 1, lastMatch: 0,
+        players: [], inventory: [],
         league: [
-            { name: "Sparta", p: 0, w: 0, pts: 0 },
-            { name: "Bohemians", p: 0, w: 0, pts: 0 },
-            { name: "Vítkovice", p: 0, w: 0, pts: 0 },
-            { name: "Tatran", p: 0, w: 0, pts: 0 },
-            { name: "Chodov", p: 0, w: 0, pts: 0 },
-            { name: "Můj Tým", p: 0, w: 0, pts: 0, isPlayer: true }
+            { name: "FK Kuličky", strength: 2, pts: 0 },
+            { name: "SK Beton", strength: 5, pts: 0 },
+            { name: "HC Prach", strength: 8, pts: 0 },
+            { name: "Lvi z Lhoty", strength: 12, pts: 0 },
+            { name: "Můj Tým", strength: 0, pts: 0, isPlayer: true }
         ]
     };
 
-    // --- TUTORIÁL LOGIKA ---
-    const tutSteps = [
-        { title: "Zlaťáky do začátku", text: "Nahoře vidíš své peníze. Máš 10 000 🪙, tak je utrať moudře!", action: () => nav('match') },
-        { title: "Tým není kompletní", text: "Aby jsi mohl hrát ligu, potřebuješ alespoň 6 hráčů. Teď máš jen jednoho.", action: () => nav('shop') },
-        { title: "Vzhůru na nákup", text: "V obchodě kupuj hráče. Čím vyšší statistiky, tím dražší, ale i lepší v simulaci!", action: () => nav('shop') },
-        { title: "Šetři energii", text: "Zápasy unavují. Pokud hráč klesne pod 30% energie, pošli ho spát do sekce s postelí.", action: () => nav('sleep') },
-        { title: "To je vše!", text: "Teď už víš vše. Postav nejlepší tým a vyhraj ligu!", action: () => nav('match') }
-    ];
+    function createTeam() {
+        db.name = document.getElementById('mgr-name').value || "Manažer";
+        let playerInputs = document.querySelectorAll('.p-name');
+        
+        playerInputs.forEach((input, i) => {
+            let name = input.value || ("Hráč " + (i+1));
+            db.players.push({ name: name, stat: 1, energy: 100, id: Date.now() + i });
+        });
 
-    function nextTutorial() {
-        db.tutorialStep++;
-        if (db.tutorialStep >= tutSteps.length) {
-            document.getElementById('tutorial-overlay').style.display = 'none';
-            save();
-        } else {
-            let s = tutSteps[db.tutorialStep];
-            document.getElementById('tut-title').innerText = s.title;
-            document.getElementById('tut-text').innerText = s.text;
-            s.action();
-        }
-    }
-
-    // --- ZBYTEK HRY (beze změn v logice, jen integrace) ---
-    function selectPfp(el, emoji) {
-        document.querySelectorAll('.pfp-opt').forEach(o => o.classList.remove('selected'));
-        el.classList.add('selected'); db.pfp = emoji;
-        if(document.getElementById('mgr-name').value) document.getElementById('starter-choice').style.display = 'block';
-    }
-
-    function pickStarter(idx) {
-        const names = ["Lukáš Holub", "Filip Pavel", "Dominik Havlas"];
-        db.name = document.getElementById('mgr-name').value;
         db.league.find(t => t.isPlayer).name = "Tým " + db.name;
-        addPlayer(names[idx], 1, 1, 1);
-        db.money = 10000; db.earned = 10000;
+        
         document.getElementById('scr-reg').classList.remove('active');
         document.getElementById('top-ui').style.display = 'flex';
         document.getElementById('nav').style.display = 'flex';
+        
+        save();
+        startTimers(); 
         nav('match');
-        document.getElementById('tutorial-overlay').style.display = 'flex';
-        startTimers();
     }
 
-    function addPlayer(name, att, def, cen) {
-        db.players.push({ name, att, def, cen, energy: 100, sleepUntil: 0, id: Date.now() + Math.random() });
-        save();
+    function getTeamAvg() {
+        if(db.players.length === 0) return 0;
+        let sum = db.players.reduce((a, b) => a + b.stat, 0);
+        return Math.round(sum / db.players.length);
     }
 
     function runMatch() {
-        const readyPlayers = db.players.filter(p => p.energy >= 30 && p.sleepUntil < Date.now());
-        if(readyPlayers.length < 6) return alert("Potřebuješ aspoň 6 hráčů!");
-        if(Date.now() - db.lastMatch < 60000) return alert("Hala se připravuje...");
+        const readyPlayers = db.players.filter(p => p.energy >= 30);
+        if(readyPlayers.length < 6) return alert("Potřebuješ 6 hráčů s energií!");
+        if(Date.now() - db.lastMatch < 60000) return alert("Počkej na další zápas!");
+
+        let myPower = getTeamAvg();
+        let opp = db.league.filter(t => !t.isPlayer)[Math.floor(Math.random()*4)];
+        
+        let winChance = 0.5;
+        let diff = myPower - opp.strength;
+        if(diff === 0) winChance = 0.5;
+        else if(diff === 1) winChance = 0.75;
+        else if(diff >= 2) winChance = 0.99;
+        else if(diff === -1) winChance = 0.1;
+        else winChance = 0.01;
 
         db.lastMatch = Date.now();
-        document.getElementById('match-btn').disabled = true;
-        const canvas = document.getElementById('sim-canvas');
-        canvas.style.display = "block";
+        document.getElementById('sim-canvas').style.display = "block";
         
-        let timeLeft = 30;
-        let dots = Array.from({length: 10}, (_, i) => ({
-            x: Math.random()*300, y: Math.random()*200, team: i < 5 ? 'me' : 'op', dx: (Math.random()-0.5)*5, dy: (Math.random()-0.5)*5
-        }));
-
-        const interval = setInterval(() => {
-            timeLeft -= 0.1;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0,0,300,200);
-            ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fillRect(149,0,2,200);
-            ctx.fillStyle = "white"; ctx.fillRect(0, 80, 5, 40); ctx.fillRect(295, 80, 5, 40);
-            dots.forEach(d => {
-                d.x += d.dx; d.y += d.dy;
-                if(d.x<0 || d.x>300) d.dx *= -1; if(d.y<0 || d.y>200) d.dy *= -1;
-                ctx.fillStyle = d.team === 'me' ? '#38bdf8' : '#ef4444';
-                ctx.beginPath(); ctx.arc(d.x, d.y, 4, 0, Math.PI*2); ctx.fill();
-            });
-            if(timeLeft <= 0) { clearInterval(interval); canvas.style.display = "none"; processMatchResult(); }
-        }, 100);
-    }
-
-    function processMatchResult() {
-        db.money += 50; db.earned += 50;
-        let pTeam = db.league.find(t => t.isPlayer);
-        pTeam.p++; pTeam.w++; pTeam.pts += 3;
-        db.league.forEach(t => { if(!t.isPlayer) { t.p++; if(Math.random() > 0.5) { t.w++; t.pts += 3; } } });
-        db.players.filter(p => p.energy >= 30).slice(0,6).forEach(p => {
-            p.energy = Math.max(0, p.energy - (Math.floor(Math.random()*6)+5));
-        });
-        save(); updateUI(); renderLeague();
-    }
-
-    function renderLeague() {
-        const body = document.getElementById('league-body');
-        body.innerHTML = "";
-        db.league.sort((a,b) => b.pts - a.pts);
-        db.league.forEach((t, i) => {
-            body.innerHTML += `<tr class="${t.isPlayer ? 'my-team-row' : ''}"><td>${i+1}</td><td>${t.name}</td><td>${t.p}</td><td>${t.w}</td><td>${t.pts}</td></tr>`;
-        });
+        setTimeout(() => {
+            document.getElementById('sim-canvas').style.display = "none";
+            if(Math.random() < winChance) {
+                db.money += 500; db.earned += 500;
+                db.league.find(t => t.isPlayer).pts += 3;
+                alert("VÝHRA proti " + opp.name + "! (+500 🪙)");
+            } else {
+                alert("PROHRA! " + opp.name + " byl nad tvé síly.");
+            }
+            db.players.slice(0,6).forEach(p => p.energy -= 10);
+            db.league.forEach(t => { if(!t.isPlayer) t.pts += (Math.random() > 0.5 ? 3 : 0); });
+            save(); updateUI(); renderLeague();
+        }, 2500);
     }
 
     function generateShop() {
+        let maxStat = db.shopLvl * 10;
         db.shopItems = [];
-        for(let i=0; i<3; i++) {
-            let stat = Math.floor(Math.random()*99)+1;
-            db.shopItems.push({ type: 'player', stat: stat, price: stat * 100, name: "Posila Lvl "+stat });
+        for(let i=0; i<2; i++) {
+            let s = Math.floor(Math.random() * maxStat) + 1;
+            let price = 10000 + (s * 900); 
+            db.shopItems.push({ type: 'player', stat: s, price: price, name: "Posila Lvl " + s });
         }
-        if(Math.random() > 0.5) db.shopItems.push({ type: 'energy', price: 1000 });
+        if(Math.random() > 0.5) db.shopItems.push({ type: 'item', name: '⚡ Energeťák', price: 1000, icon: '🥤' });
         renderShop();
     }
 
     function buyShop(idx) {
         let item = db.shopItems[idx];
-        if(db.money < item.price) return alert("Příliš drahé!");
-        db.money -= item.price; db.spent += item.price;
-        if(item.type === 'player') addPlayer(item.name, item.stat, item.stat, item.stat);
-        else db.players.forEach(p => p.energy = 100);
+        if(db.money < item.price) return alert("Nedostatek financí!");
+        
+        if(item.type === 'player') {
+            db.money -= item.price;
+            db.players.push({ name: item.name, stat: item.stat, energy: 100, id: Date.now() });
+        } else {
+            if(db.inventory.length >= 20) return alert("Plný batoh!");
+            db.money -= item.price;
+            db.inventory.push(item);
+        }
         db.shopItems.splice(idx, 1);
-        save(); updateUI(); renderShop();
+        save(); updateUI(); renderShop(); renderBackpack();
     }
 
-    function goToSleep(id) {
-        db.players.find(x => x.id === id).sleepUntil = Date.now() + 60000;
-        save(); renderSleep();
+    function upgradeShop() {
+        let cost = db.shopLvl * 50000;
+        if(db.money >= cost) {
+            db.money -= cost; db.shopLvl++;
+            save(); updateUI(); generateShop();
+        } else alert("Potřebuješ " + cost + " 🪙");
+    }
+
+    function renderBackpack() {
+        const grid = document.getElementById('backpack');
+        grid.innerHTML = "";
+        for(let i=0; i<20; i++) {
+            let item = db.inventory[i];
+            grid.innerHTML += `<div class="inv-slot ${item ? 'inv-filled' : ''}">${item ? item.icon : ''}</div>`;
+        }
+        document.getElementById('inv-count').innerText = db.inventory.length;
+    }
+
+    function renderLeague() {
+        const body = document.getElementById('league-body');
+        body.innerHTML = "";
+        let pTeam = db.league.find(t => t.isPlayer);
+        pTeam.strength = getTeamAvg();
+        db.league.sort((a,b) => b.pts - a.pts).forEach((t, i) => {
+            body.innerHTML += `<tr class="${t.isPlayer ? 'my-team-row' : ''}"><td>${i+1}</td><td>${t.name}</td><td>${t.strength}</td><td>${t.pts}</td></tr>`;
+        });
     }
 
     function nav(id) {
@@ -262,27 +242,29 @@
         document.getElementById('scr-'+id).classList.add('active');
         document.getElementById('n-'+id).classList.add('selected');
         updateUI();
+        if(id === 'profile') renderBackpack();
         if(id === 'shop') renderShop();
-        if(id === 'sleep') renderSleep();
         if(id === 'match') renderLeague();
+        if(id === 'sleep') renderSleep();
     }
 
     function updateUI() {
         document.getElementById('money').innerText = db.money;
+        document.getElementById('team-avg').innerText = getTeamAvg();
         document.getElementById('player-count').innerText = db.players.length;
-        document.getElementById('stat-earned').innerText = db.earned;
-        document.getElementById('stat-spent').innerText = db.spent;
-        document.getElementById('stat-count').innerText = db.players.length;
-        document.getElementById('prof-name').innerText = db.pfp + " " + db.name;
+        document.getElementById('shop-lvl').innerText = db.shopLvl;
+        document.getElementById('shop-max-stat').innerText = db.shopLvl * 10;
+        document.getElementById('up-shop-btn').innerText = "Vylepšit (" + (db.shopLvl * 50000) + " 🪙)";
     }
 
     function renderSleep() {
         const cont = document.getElementById('sleep-list');
         cont.innerHTML = "";
         db.players.forEach(p => {
-            let isSleeping = p.sleepUntil > Date.now();
-            cont.innerHTML += `<div class="card"><b>${p.name}</b> (${p.energy}%)<div class="energy-bar"><div class="energy-fill" style="width:${p.energy}%"></div></div>
-                ${isSleeping ? `<p>💤 Regenerace (${Math.ceil((p.sleepUntil-Date.now())/1000)}s)</p>` : `<button onclick="goToSleep(${p.id})">SPÁNEČEK</button>`}</div>`;
+            cont.innerHTML += `<div class="card">
+                <b>${p.name}</b> (${p.energy}%)
+                <div class="energy-bar"><div class="energy-fill" style="width:${p.energy}%"></div></div>
+            </div>`;
         });
     }
 
@@ -290,28 +272,28 @@
         const cont = document.getElementById('shop-list');
         cont.innerHTML = "";
         db.shopItems.forEach((item, i) => {
-            cont.innerHTML += `<div class="card">${item.type === 'energy' ? `<h3>⚡ ENERGEŤÁK</h3>` : `<h3>🏃 ${item.name}</h3><p>Statistiky: ${item.stat}</p>`}
-                <button onclick="buyShop(${i})">KOUPIT (${item.price} 🪙)</button></div>`;
+            cont.innerHTML += `<div class="card">
+                <h3>${item.name}</h3>
+                <p>Cena: ${item.price} 🪙</p>
+                <button onclick="buyShop(${i})">KOUPIT</button>
+            </div>`;
         });
     }
 
     function startTimers() {
         setInterval(() => {
-            db.shopReset--;
-            if(db.shopReset <= 0) { db.shopReset = 60; generateShop(); }
-            if(document.getElementById('shop-timer')) document.getElementById('shop-timer').innerText = db.shopReset;
-            db.players.forEach(p => { if(p.sleepUntil > 0 && p.sleepUntil < Date.now()) { p.energy = 100; p.sleepUntil = 0; save(); } });
-            let secToMatch = Math.ceil((60000 - (Date.now() - db.lastMatch)) / 1000);
-            if(document.getElementById('match-timer-text')) document.getElementById('match-timer-text').innerText = secToMatch > 0 ? "Další zápas za " + secToMatch + "s" : "Můžeš hrát!";
+            db.players.forEach(p => { if(p.energy < 100) p.energy = Math.min(100, p.energy + 1); });
+            let sec = Math.ceil((60000 - (Date.now() - db.lastMatch)) / 1000);
+            document.getElementById('match-timer-text').innerText = sec > 0 ? "Příprava haly: " + sec + "s" : "Můžeš hrát!";
             if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep();
         }, 1000);
     }
 
-    function save() { localStorage.setItem('fb_mgr_final_tut', JSON.stringify(db)); }
-    function resetGame() { if(confirm("Smazat vše?")) { localStorage.clear(); location.reload(); } }
+    function save() { localStorage.setItem('fb_mgr_custom_v1', JSON.stringify(db)); }
+    function resetGame() { if(confirm("Smazat tým a kariéru?")) { localStorage.clear(); location.reload(); } }
 
     window.onload = () => {
-        let saved = localStorage.getItem('fb_mgr_final_tut');
+        let saved = localStorage.getItem('fb_mgr_custom_v1');
         if(saved) {
             db = JSON.parse(saved);
             document.getElementById('scr-reg').classList.remove('active');
