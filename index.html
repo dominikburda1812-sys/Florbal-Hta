@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager Ultimate</title>
+    <title>Floorball Manager Ultimate | League Edition</title>
     <style>
         :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; text-align: center; overflow: hidden; }
@@ -19,10 +19,15 @@
         .nav-item { font-size: 24px; color: #64748b; cursor: pointer; flex: 1; }
         .nav-item.selected { color: var(--primary); }
 
-        button { background: var(--primary); border: none; padding: 10px; border-radius: 8px; font-weight: bold; color: #0f172a; width: 100%; margin: 5px 0; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        th { border-bottom: 2px solid var(--primary); padding: 5px; }
+        td { padding: 8px 5px; border-bottom: 1px solid #334155; }
+        .my-team-row { background: rgba(56, 189, 248, 0.2); font-weight: bold; }
+
+        button { background: var(--primary); border: none; padding: 12px; border-radius: 8px; font-weight: bold; color: #0f172a; width: 100%; margin: 5px 0; cursor: pointer; }
         button:disabled { background: #475569; opacity: 0.5; }
         
-        input { padding: 10px; border-radius: 8px; border: none; width: 80%; margin: 10px 0; }
+        input { padding: 10px; border-radius: 8px; border: none; width: 80%; margin: 10px 0; background: #334155; color: white; }
         .pfp-grid { display: flex; justify-content: center; gap: 10px; margin: 10px; }
         .pfp-opt { font-size: 40px; cursor: pointer; padding: 5px; border: 2px solid transparent; border-radius: 10px; }
         .pfp-opt.selected { border-color: var(--primary); }
@@ -60,11 +65,25 @@
 </div>
 
 <div id="scr-match" class="screen">
-    <h2>ZÁPASOVÁ HALA 🏑</h2>
-    <div id="match-status"></div>
+    <h2>LIGOVÁ TABULKA 🏆</h2>
+    <div class="card" style="width:95%; max-width:none;">
+        <table id="league-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tým</th>
+                    <th>Z</th>
+                    <th>V</th>
+                    <th>B</th>
+                </tr>
+            </thead>
+            <tbody id="league-body"></tbody>
+        </table>
+    </div>
+    
     <canvas id="sim-canvas" width="300" height="200"></canvas>
     <button id="match-btn" onclick="runMatch()">HRÁT ZÁPAS (30s)</button>
-    <div id="match-log" style="font-size: 0.8em; color: #94a3b8;"></div>
+    <p id="match-timer-text" style="font-size:0.7em; color:#94a3b8;"></p>
 </div>
 
 <div id="scr-shop" class="screen">
@@ -80,7 +99,7 @@
         <p>Utracené zlatáky: <span id="stat-spent">0</span></p>
         <p>Vlastněno hráčů: <span id="stat-count">0</span></p>
     </div>
-    <button style="background:#ef4444" onclick="resetGame()">RESET HRY</button>
+    <button style="background:#ef4444; color: white;" onclick="resetGame()">RESET HRY</button>
 </div>
 
 <div id="nav" class="nav-bar" style="display:none">
@@ -92,11 +111,18 @@
 
 <script>
     let db = {
-        name: "", pfp: "", money: 1000, earned: 100, spent: 0,
-        players: [], shopItems: [], lastMatch: 0, shopReset: 60
+        name: "", pfp: "", money: 10000, earned: 10000, spent: 0,
+        players: [], shopItems: [], lastMatch: 0, shopReset: 60,
+        league: [
+            { name: "Sparta", p: 0, w: 0, pts: 0 },
+            { name: "Bohemians", p: 0, w: 0, pts: 0 },
+            { name: "Vítkovice", p: 0, w: 0, pts: 0 },
+            { name: "Tatran", p: 0, w: 0, pts: 0 },
+            { name: "Chodov", p: 0, w: 0, pts: 0 },
+            { name: "Můj Tým", p: 0, w: 0, pts: 0, isPlayer: true }
+        ]
     };
 
-    // --- INICIALIZACE ---
     function selectPfp(el, emoji) {
         document.querySelectorAll('.pfp-opt').forEach(o => o.classList.remove('selected'));
         el.classList.add('selected'); db.pfp = emoji;
@@ -106,8 +132,12 @@
     function pickStarter(idx) {
         const names = ["Lukáš Holub", "Filip Pavel", "Dominik Havlas"];
         db.name = document.getElementById('mgr-name').value;
+        // Přejmenovat hráčův tým v tabulce
+        let pTeam = db.league.find(t => t.isPlayer);
+        pTeam.name = "Tým " + db.name;
+        
         addPlayer(names[idx], 1, 1, 1);
-        db.money = 100;
+        db.money = 10000; db.earned = 10000;
         nav('match');
         document.getElementById('top-ui').style.display = 'flex';
         document.getElementById('nav').style.display = 'flex';
@@ -115,22 +145,16 @@
     }
 
     function addPlayer(name, att, def, cen) {
-        db.players.push({
-            name, att, def, cen,
-            energy: 100, sleepUntil: 0, id: Date.now() + Math.random()
-        });
+        db.players.push({ name, att, def, cen, energy: 100, sleepUntil: 0, id: Date.now() + Math.random() });
         save();
     }
 
-    // --- LOGIKA ZÁPASU ---
     function runMatch() {
         const readyPlayers = db.players.filter(p => p.energy >= 30 && p.sleepUntil < Date.now());
-        const now = Date.now();
-
         if(readyPlayers.length < 6) return alert("Potřebuješ aspoň 6 hráčů s energií nad 30%!");
-        if(now - db.lastMatch < 60000) return alert("Další zápas můžeš hrát až za minutu!");
+        if(Date.now() - db.lastMatch < 60000) return alert("Čekej na další zápas!");
 
-        db.lastMatch = now;
+        db.lastMatch = Date.now();
         document.getElementById('match-btn').disabled = true;
         const canvas = document.getElementById('sim-canvas');
         canvas.style.display = "block";
@@ -139,20 +163,19 @@
         let dots = Array.from({length: 10}, (_, i) => ({
             x: Math.random()*300, y: Math.random()*200, 
             team: i < 5 ? 'me' : 'op',
-            dx: (Math.random()-0.5)*4, dy: (Math.random()-0.5)*4
+            dx: (Math.random()-0.5)*5, dy: (Math.random()-0.5)*5
         }));
 
         const interval = setInterval(() => {
-            timeLeft--;
+            timeLeft -= 0.1;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0,0,300,200);
-            // Branky
+            ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fillRect(149,0,2,200);
             ctx.fillStyle = "white"; ctx.fillRect(0, 80, 5, 40); ctx.fillRect(295, 80, 5, 40);
-            // Hráči
+            
             dots.forEach(d => {
                 d.x += d.dx; d.y += d.dy;
-                if(d.x<0 || d.x>300) d.dx *= -1;
-                if(d.y<0 || d.y>200) d.dy *= -1;
+                if(d.x<0 || d.x>300) d.dx *= -1; if(d.y<0 || d.y>200) d.dy *= -1;
                 ctx.fillStyle = d.team === 'me' ? '#38bdf8' : '#ef4444';
                 ctx.beginPath(); ctx.arc(d.x, d.y, 4, 0, Math.PI*2); ctx.fill();
             });
@@ -160,56 +183,76 @@
             if(timeLeft <= 0) {
                 clearInterval(interval);
                 canvas.style.display = "none";
-                db.money += 50; db.earned += 50;
-                // Odebrat energii náhodným 6 hráčům
-                readyPlayers.slice(0,6).forEach(p => {
-                    p.energy = Math.max(0, p.energy - (Math.floor(Math.random()*6)+5));
-                });
-                alert("Zápas skončil! Vyhrál jsi 50 zlatáků.");
-                save(); updateUI();
+                processMatchResult();
             }
         }, 100);
     }
 
-    // --- OBCHOD ---
+    function processMatchResult() {
+        // Hráč vyhrál
+        db.money += 50; db.earned += 50;
+        let pTeam = db.league.find(t => t.isPlayer);
+        pTeam.p++; pTeam.w++; pTeam.pts += 3;
+
+        // Simulace ostatních týmů v lize (náhodně)
+        db.league.forEach(t => {
+            if(!t.isPlayer) {
+                t.p++;
+                if(Math.random() > 0.5) { t.w++; t.pts += 3; }
+            }
+        });
+
+        // Úbytek energie
+        db.players.filter(p => p.energy >= 30).slice(0,6).forEach(p => {
+            p.energy = Math.max(0, p.energy - (Math.floor(Math.random()*6)+5));
+        });
+
+        alert("VÝHRA! Získal jsi 50 zlatáků a 3 body do tabulky.");
+        save(); updateUI(); renderLeague();
+    }
+
+    function renderLeague() {
+        const body = document.getElementById('league-body');
+        body.innerHTML = "";
+        // Seřadit podle bodů
+        db.league.sort((a,b) => b.pts - a.pts);
+        db.league.forEach((t, i) => {
+            body.innerHTML += `
+                <tr class="${t.isPlayer ? 'my-team-row' : ''}">
+                    <td>${i+1}</td>
+                    <td>${t.name}</td>
+                    <td>${t.p}</td>
+                    <td>${t.w}</td>
+                    <td>${t.pts}</td>
+                </tr>`;
+        });
+    }
+
     function generateShop() {
         db.shopItems = [];
-        // Hráči
         for(let i=0; i<3; i++) {
             let stat = Math.floor(Math.random()*99)+1;
-            db.shopItems.push({ type: 'player', stat: stat, price: stat * 100, name: "Posila "+stat });
+            db.shopItems.push({ type: 'player', stat: stat, price: stat * 100, name: "Posila Lvl "+stat });
         }
-        // Energeťák (50% šance)
-        if(Math.random() > 0.5) {
-            db.shopItems.push({ type: 'energy', price: 1000 });
-        }
+        if(Math.random() > 0.5) db.shopItems.push({ type: 'energy', price: 1000 });
         renderShop();
     }
 
     function buyShop(idx) {
         let item = db.shopItems[idx];
         if(db.money < item.price) return alert("Málo peněz!");
-        
-        db.money -= item.price;
-        db.spent += item.price;
-        
+        db.money -= item.price; db.spent += item.price;
         if(item.type === 'player') addPlayer(item.name, item.stat, item.stat, item.stat);
-        else {
-            db.players.forEach(p => p.energy = 100);
-            alert("Všichni hráči mají 100% energie!");
-        }
+        else db.players.forEach(p => p.energy = 100);
         db.shopItems.splice(idx, 1);
         save(); updateUI(); renderShop();
     }
 
-    // --- SYSTÉM SPÁNKU ---
     function goToSleep(id) {
-        let p = db.players.find(x => x.id === id);
-        p.sleepUntil = Date.now() + 60000;
+        db.players.find(x => x.id === id).sleepUntil = Date.now() + 60000;
         save(); renderSleep();
     }
 
-    // --- UI A POMOCNÉ ---
     function nav(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('selected'));
@@ -218,6 +261,7 @@
         updateUI();
         if(id === 'shop') renderShop();
         if(id === 'sleep') renderSleep();
+        if(id === 'match') renderLeague();
     }
 
     function updateUI() {
@@ -234,12 +278,11 @@
         cont.innerHTML = "";
         db.players.forEach(p => {
             let isSleeping = p.sleepUntil > Date.now();
-            let timeRem = Math.ceil((p.sleepUntil - Date.now()) / 1000);
             cont.innerHTML += `
                 <div class="card">
                     <b>${p.name}</b> (${p.energy}%)
                     <div class="energy-bar"><div class="energy-fill" style="width:${p.energy}%"></div></div>
-                    ${isSleeping ? `<p>💤 Spinká (${timeRem}s)</p>` : `<button onclick="goToSleep(${p.id})">SPÁNEČEK PRO HRÁČE</button>`}
+                    ${isSleeping ? `<p>💤 Spinká (${Math.ceil((p.sleepUntil-Date.now())/1000)}s)</p>` : `<button onclick="goToSleep(${p.id})">SPÁNEČEK PRO HRÁČE</button>`}
                 </div>`;
         });
     }
@@ -248,11 +291,10 @@
         const cont = document.getElementById('shop-list');
         cont.innerHTML = "";
         db.shopItems.forEach((item, i) => {
-            cont.innerHTML += `
-                <div class="card">
-                    ${item.type === 'energy' ? `<h3>⚡ ENERGEŤÁK</h3>` : `<h3>🏃 ${item.name}</h3><p>Statistiky: ${item.stat}</p>`}
-                    <button onclick="buyShop(${i})">KOUPIT (${item.price} 🪙)</button>
-                </div>`;
+            cont.innerHTML += `<div class="card">
+                ${item.type === 'energy' ? `<h3>⚡ ENERGEŤÁK</h3>` : `<h3>🏃 ${item.name}</h3><p>Statistiky: ${item.stat}</p>`}
+                <button onclick="buyShop(${i})">KOUPIT (${item.price} 🪙)</button>
+            </div>`;
         });
     }
 
@@ -260,27 +302,29 @@
         setInterval(() => {
             db.shopReset--;
             if(db.shopReset <= 0) { db.shopReset = 60; generateShop(); }
-            document.getElementById('shop-timer').innerText = db.shopReset;
+            if(document.getElementById('shop-timer')) document.getElementById('shop-timer').innerText = db.shopReset;
             
-            // Automatické probuzení
             db.players.forEach(p => {
-                if(p.sleepUntil > 0 && p.sleepUntil < Date.now()) {
-                    p.energy = 100; p.sleepUntil = 0; save();
-                }
+                if(p.sleepUntil > 0 && p.sleepUntil < Date.now()) { p.energy = 100; p.sleepUntil = 0; save(); }
             });
+
+            let secToMatch = Math.ceil((60000 - (Date.now() - db.lastMatch)) / 1000);
+            if(secToMatch > 0) {
+                document.getElementById('match-btn').disabled = true;
+                document.getElementById('match-timer-text').innerText = "Další zápas za " + secToMatch + "s";
+            } else {
+                document.getElementById('match-btn').disabled = false;
+                document.getElementById('match-timer-text').innerText = "Můžeš hrát!";
+            }
             if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep();
-            
-            // Zápasový button
-            let matchReady = (Date.now() - db.lastMatch) >= 60000;
-            document.getElementById('match-btn').disabled = !matchReady;
         }, 1000);
     }
 
-    function save() { localStorage.setItem('fb_mgr_db', JSON.stringify(db)); }
-    function resetGame() { if(confirm("Opravdu smazat vše?")) { localStorage.clear(); location.reload(); } }
+    function save() { localStorage.setItem('fb_mgr_v_league', JSON.stringify(db)); }
+    function resetGame() { if(confirm("Smazat vše?")) { localStorage.clear(); location.reload(); } }
 
     window.onload = () => {
-        let saved = localStorage.getItem('fb_mgr_db');
+        let saved = localStorage.getItem('fb_mgr_v_league');
         if(saved) {
             db = JSON.parse(saved);
             document.getElementById('scr-reg').classList.remove('active');
