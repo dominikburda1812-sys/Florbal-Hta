@@ -1,63 +1,294 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Floorball Life Alpha</title>
-  <style>
-    body { font-family: sans-serif; background: #121212; color: white; text-align: center; padding: 20px; }
-    .karta { border: 2px solid #00ffcc; border-radius: 15px; padding: 20px; background: #1e1e1e; max-width: 300px; margin: 0 auto; }
-    .stat { font-size: 1.2em; margin: 10px 0; }
-    button { background: #00ffcc; border: none; padding: 15px 30px; font-weight: bold; border-radius: 10px; cursor: pointer; font-size: 1em; }
-    button:disabled { background: #555; }
-  </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Floorball Manager Ultimate</title>
+    <style>
+        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; text-align: center; overflow: hidden; }
+        
+        .ui-bar { background: var(--card); padding: 10px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-around; font-weight: bold; }
+        .screen { display: none; padding: 15px; height: 82vh; overflow-y: auto; padding-bottom: 80px; }
+        .active { display: block; }
+
+        .card { background: var(--card); border: 1px solid #334155; border-radius: 12px; padding: 10px; margin: 8px auto; width: 90%; max-width: 320px; position: relative; }
+        .energy-bar { background: #475569; height: 8px; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+        .energy-fill { background: #22c55e; height: 100%; transition: width 0.3s; }
+
+        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 65px; background: var(--card); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #334155; }
+        .nav-item { font-size: 24px; color: #64748b; cursor: pointer; flex: 1; }
+        .nav-item.selected { color: var(--primary); }
+
+        button { background: var(--primary); border: none; padding: 10px; border-radius: 8px; font-weight: bold; color: #0f172a; width: 100%; margin: 5px 0; cursor: pointer; }
+        button:disabled { background: #475569; opacity: 0.5; }
+        
+        input { padding: 10px; border-radius: 8px; border: none; width: 80%; margin: 10px 0; }
+        .pfp-grid { display: flex; justify-content: center; gap: 10px; margin: 10px; }
+        .pfp-opt { font-size: 40px; cursor: pointer; padding: 5px; border: 2px solid transparent; border-radius: 10px; }
+        .pfp-opt.selected { border-color: var(--primary); }
+
+        #sim-canvas { background: #15803d; border: 2px solid white; display: none; margin: 10px auto; border-radius: 5px; }
+    </style>
 </head>
 <body>
 
-  <h1>Floorball Life</h1>
-  
-  <div class="karta">
-    <h2 id="jmeno">Načítání...</h2>
-    <div class="stat">Střelba: <span id="strelba">0</span></div>
-    <div class="stat">Chemie: <span id="chemie">0</span></div>
-    <div class="stat">Energie: <span id="energie">100</span>%</div>
-    <div class="stat">Peníze: <span id="penize">150</span> Kč</div>
-  </div>
+<div id="top-ui" style="display:none" class="ui-bar">
+    <span>🪙 <span id="money">0</span></span>
+    <span>👥 <span id="player-count">0</span>/6</span>
+</div>
 
-  <br>
-  <button onclick="trenink()"> tvrdý trénink (-20% Energie, +5 Střelba)</button>
+<div id="scr-reg" class="screen active">
+    <h1>VÍTEJ, MANAŽERE</h1>
+    <input type="text" id="mgr-name" placeholder="Zadej své jméno...">
+    <p>Vyber si profilovku:</p>
+    <div class="pfp-grid">
+        <span class="pfp-opt" onclick="selectPfp(this, '👔')">👔</span>
+        <span class="pfp-opt" onclick="selectPfp(this, '🧢')">🧢</span>
+        <span class="pfp-opt" onclick="selectPfp(this, '🕶️')">🕶️</span>
+    </div>
+    <div id="starter-choice" style="display:none">
+        <p>Vyber prvního hráče (Lvl 1):</p>
+        <button onclick="pickStarter(0)">Lukáš Holub</button>
+        <button onclick="pickStarter(1)">Filip Pavel</button>
+        <button onclick="pickStarter(2)">Dominik Havlas</button>
+    </div>
+</div>
 
-  <script>
-    // Data tvého hráče
-    let hrac = {
-      jmeno: "Lukáš Novák",
-      strelba: 50,
-      chemie: 5,
-      energie: 100,
-      penize: 150
+<div id="scr-sleep" class="screen">
+    <h2>REGENERACE 😴</h2>
+    <div id="sleep-list"></div>
+</div>
+
+<div id="scr-match" class="screen">
+    <h2>ZÁPASOVÁ HALA 🏑</h2>
+    <div id="match-status"></div>
+    <canvas id="sim-canvas" width="300" height="200"></canvas>
+    <button id="match-btn" onclick="runMatch()">HRÁT ZÁPAS (30s)</button>
+    <div id="match-log" style="font-size: 0.8em; color: #94a3b8;"></div>
+</div>
+
+<div id="scr-shop" class="screen">
+    <h2>OBCHOD 🛒</h2>
+    <p style="font-size:0.7em">Nová nabídka za: <span id="shop-timer">60</span>s</p>
+    <div id="shop-list"></div>
+</div>
+
+<div id="scr-profile" class="screen">
+    <h2 id="prof-name">Manažer</h2>
+    <div class="card">
+        <p>Získané zlatáky: <span id="stat-earned">0</span></p>
+        <p>Utracené zlatáky: <span id="stat-spent">0</span></p>
+        <p>Vlastněno hráčů: <span id="stat-count">0</span></p>
+    </div>
+    <button style="background:#ef4444" onclick="resetGame()">RESET HRY</button>
+</div>
+
+<div id="nav" class="nav-bar" style="display:none">
+    <div class="nav-item" id="n-sleep" onclick="nav('sleep')">🛏️</div>
+    <div class="nav-item selected" id="n-match" onclick="nav('match')">🥅</div>
+    <div class="nav-item" id="n-shop" onclick="nav('shop')">🛒</div>
+    <div class="nav-item" id="n-profile" onclick="nav('profile')">👤</div>
+</div>
+
+<script>
+    let db = {
+        name: "", pfp: "", money: 100, earned: 100, spent: 0,
+        players: [], shopItems: [], lastMatch: 0, shopReset: 60
     };
 
-    // Funkce pro vykreslení statistik na obrazovku
-    function updateUI() {
-      document.getElementById('jmeno').innerText = hrac.jmeno;
-      document.getElementById('strelba').innerText = hrac.strelba;
-      document.getElementById('chemie').innerText = hrac.chemie;
-      document.getElementById('energie').innerText = hrac.energie;
-      document.getElementById('penize').innerText = hrac.penize;
+    // --- INICIALIZACE ---
+    function selectPfp(el, emoji) {
+        document.querySelectorAll('.pfp-opt').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected'); db.pfp = emoji;
+        if(document.getElementById('mgr-name').value) document.getElementById('starter-choice').style.display = 'block';
     }
 
-    // Herní logika: Trénink
-    function trenink() {
-      if (hrac.energie >= 20) {
-        hrac.energie -= 20;
-        hrac.strelba += 5;
-        alert("Dobrá práce! Tvá střela je teď o kousek přesnější.");
+    function pickStarter(idx) {
+        const names = ["Lukáš Holub", "Filip Pavel", "Dominik Havlas"];
+        db.name = document.getElementById('mgr-name').value;
+        addPlayer(names[idx], 1, 1, 1);
+        db.money = 100;
+        nav('match');
+        document.getElementById('top-ui').style.display = 'flex';
+        document.getElementById('nav').style.display = 'flex';
+        startTimers();
+    }
+
+    function addPlayer(name, att, def, cen) {
+        db.players.push({
+            name, att, def, cen,
+            energy: 100, sleepUntil: 0, id: Date.now() + Math.random()
+        });
+        save();
+    }
+
+    // --- LOGIKA ZÁPASU ---
+    function runMatch() {
+        const readyPlayers = db.players.filter(p => p.energy >= 30 && p.sleepUntil < Date.now());
+        const now = Date.now();
+
+        if(readyPlayers.length < 6) return alert("Potřebuješ aspoň 6 hráčů s energií nad 30%!");
+        if(now - db.lastMatch < 60000) return alert("Další zápas můžeš hrát až za minutu!");
+
+        db.lastMatch = now;
+        document.getElementById('match-btn').disabled = true;
+        const canvas = document.getElementById('sim-canvas');
+        canvas.style.display = "block";
+        
+        let timeLeft = 30;
+        let dots = Array.from({length: 10}, (_, i) => ({
+            x: Math.random()*300, y: Math.random()*200, 
+            team: i < 5 ? 'me' : 'op',
+            dx: (Math.random()-0.5)*4, dy: (Math.random()-0.5)*4
+        }));
+
+        const interval = setInterval(() => {
+            timeLeft--;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,300,200);
+            // Branky
+            ctx.fillStyle = "white"; ctx.fillRect(0, 80, 5, 40); ctx.fillRect(295, 80, 5, 40);
+            // Hráči
+            dots.forEach(d => {
+                d.x += d.dx; d.y += d.dy;
+                if(d.x<0 || d.x>300) d.dx *= -1;
+                if(d.y<0 || d.y>200) d.dy *= -1;
+                ctx.fillStyle = d.team === 'me' ? '#38bdf8' : '#ef4444';
+                ctx.beginPath(); ctx.arc(d.x, d.y, 4, 0, Math.PI*2); ctx.fill();
+            });
+
+            if(timeLeft <= 0) {
+                clearInterval(interval);
+                canvas.style.display = "none";
+                db.money += 50; db.earned += 50;
+                // Odebrat energii náhodným 6 hráčům
+                readyPlayers.slice(0,6).forEach(p => {
+                    p.energy = Math.max(0, p.energy - (Math.floor(Math.random()*6)+5));
+                });
+                alert("Zápas skončil! Vyhrál jsi 50 zlatáků.");
+                save(); updateUI();
+            }
+        }, 100);
+    }
+
+    // --- OBCHOD ---
+    function generateShop() {
+        db.shopItems = [];
+        // Hráči
+        for(let i=0; i<3; i++) {
+            let stat = Math.floor(Math.random()*99)+1;
+            db.shopItems.push({ type: 'player', stat: stat, price: stat * 100, name: "Posila "+stat });
+        }
+        // Energeťák (50% šance)
+        if(Math.random() > 0.5) {
+            db.shopItems.push({ type: 'energy', price: 1000 });
+        }
+        renderShop();
+    }
+
+    function buyShop(idx) {
+        let item = db.shopItems[idx];
+        if(db.money < item.price) return alert("Málo peněz!");
+        
+        db.money -= item.price;
+        db.spent += item.price;
+        
+        if(item.type === 'player') addPlayer(item.name, item.stat, item.stat, item.stat);
+        else {
+            db.players.forEach(p => p.energy = 100);
+            alert("Všichni hráči mají 100% energie!");
+        }
+        db.shopItems.splice(idx, 1);
+        save(); updateUI(); renderShop();
+    }
+
+    // --- SYSTÉM SPÁNKU ---
+    function goToSleep(id) {
+        let p = db.players.find(x => x.id === id);
+        p.sleepUntil = Date.now() + 60000;
+        save(); renderSleep();
+    }
+
+    // --- UI A POMOCNÉ ---
+    function nav(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('selected'));
+        document.getElementById('scr-'+id).classList.add('active');
+        document.getElementById('n-'+id).classList.add('selected');
         updateUI();
-      } else {
-        alert("Jsi příliš unavený! Musíš si odpočinout.");
-      }
+        if(id === 'shop') renderShop();
+        if(id === 'sleep') renderSleep();
     }
 
-    // První vykreslení při startu
-    updateUI();
-  </script>
+    function updateUI() {
+        document.getElementById('money').innerText = db.money;
+        document.getElementById('player-count').innerText = db.players.length;
+        document.getElementById('stat-earned').innerText = db.earned;
+        document.getElementById('stat-spent').innerText = db.spent;
+        document.getElementById('stat-count').innerText = db.players.length;
+        document.getElementById('prof-name').innerText = db.pfp + " " + db.name;
+    }
+
+    function renderSleep() {
+        const cont = document.getElementById('sleep-list');
+        cont.innerHTML = "";
+        db.players.forEach(p => {
+            let isSleeping = p.sleepUntil > Date.now();
+            let timeRem = Math.ceil((p.sleepUntil - Date.now()) / 1000);
+            cont.innerHTML += `
+                <div class="card">
+                    <b>${p.name}</b> (${p.energy}%)
+                    <div class="energy-bar"><div class="energy-fill" style="width:${p.energy}%"></div></div>
+                    ${isSleeping ? `<p>💤 Spinká (${timeRem}s)</p>` : `<button onclick="goToSleep(${p.id})">SPÁNEČEK PRO HRÁČE</button>`}
+                </div>`;
+        });
+    }
+
+    function renderShop() {
+        const cont = document.getElementById('shop-list');
+        cont.innerHTML = "";
+        db.shopItems.forEach((item, i) => {
+            cont.innerHTML += `
+                <div class="card">
+                    ${item.type === 'energy' ? `<h3>⚡ ENERGEŤÁK</h3>` : `<h3>🏃 ${item.name}</h3><p>Statistiky: ${item.stat}</p>`}
+                    <button onclick="buyShop(${i})">KOUPIT (${item.price} 🪙)</button>
+                </div>`;
+        });
+    }
+
+    function startTimers() {
+        setInterval(() => {
+            db.shopReset--;
+            if(db.shopReset <= 0) { db.shopReset = 60; generateShop(); }
+            document.getElementById('shop-timer').innerText = db.shopReset;
+            
+            // Automatické probuzení
+            db.players.forEach(p => {
+                if(p.sleepUntil > 0 && p.sleepUntil < Date.now()) {
+                    p.energy = 100; p.sleepUntil = 0; save();
+                }
+            });
+            if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep();
+            
+            // Zápasový button
+            let matchReady = (Date.now() - db.lastMatch) >= 60000;
+            document.getElementById('match-btn').disabled = !matchReady;
+        }, 1000);
+    }
+
+    function save() { localStorage.setItem('fb_mgr_db', JSON.stringify(db)); }
+    function resetGame() { if(confirm("Opravdu smazat vše?")) { localStorage.clear(); location.reload(); } }
+
+    window.onload = () => {
+        let saved = localStorage.getItem('fb_mgr_db');
+        if(saved) {
+            db = JSON.parse(saved);
+            document.getElementById('scr-reg').classList.remove('active');
+            document.getElementById('top-ui').style.display = 'flex';
+            document.getElementById('nav').style.display = 'flex';
+            nav('match'); startTimers(); updateUI();
+        }
+    };
+</script>
 </body>
 </html>
