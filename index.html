@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager | Commentary Edition</title>
+    <title>Floorball Manager | Smooth Edition</title>
     <style>
         :root {
             --bg-dark: #000000; --bg-card: #111111; --primary-gold: #fbbf24;
@@ -43,7 +43,7 @@
         #sim-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 1000; padding-top: 20px; }
         #sim-canvas { background: #0a0a0a; border: 3px solid var(--primary-gold); border-radius: 12px; }
         #commentary-box { background: rgba(251, 191, 36, 0.1); border: 1px solid var(--primary-gold); margin: 15px auto; width: 90%; padding: 10px; border-radius: 10px; min-height: 50px; color: var(--primary-gold); font-style: italic; font-size: 0.9em; }
-        #half-time-overlay { display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 20px; border: 2px solid var(--primary-gold); color: var(--primary-gold); font-weight: bold; border-radius: 10px; }
+        #half-time-overlay { display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 20px; border: 2px solid var(--primary-gold); color: var(--primary-gold); font-weight: bold; border-radius: 10px; z-index: 1100; }
     </style>
 </head>
 <body>
@@ -97,14 +97,14 @@
         <h3>🎒 Batoh</h3>
         <div class="inventory-grid" id="backpack"></div>
     </div>
-    <button style="background: red; color: white;" onclick="resetGame()">Smazat kariéru</button>
+    <button style="background: #dc2626; color: white;" onclick="resetGame()">Smazat kariéru</button>
 </div>
 
 <div id="sim-container">
     <h3 id="sim-time-text" style="color: var(--primary-gold);">ČAS: 0s</h3>
     <div style="position: relative; display: inline-block;">
         <canvas id="sim-canvas" width="320" height="200"></canvas>
-        <div id="half-time-overlay">POLOČAS - VÝMĚNA STRAN</div>
+        <div id="half-time-overlay">POLOČAS<br>VÝMĚNA STRAN</div>
     </div>
     <div id="commentary-box">Vítejte u dnešního zápasu!</div>
 </div>
@@ -146,8 +146,9 @@
     let matchTime = 0;
     let isPaused = false;
     let currentMatchOpponent = null;
+    let playerDots = [];
 
-    function save() { localStorage.setItem('fb_mgr_final_v1', JSON.stringify(db)); }
+    function save() { localStorage.setItem('fb_mgr_final_smooth', JSON.stringify(db)); }
 
     function createTeam() {
         db.name = document.getElementById('mgr-name').value || "Manažer";
@@ -155,13 +156,22 @@
             db.players.push({ name: input.value || ("Hráč "+(i+1)), stat: 1, energy: 100, lastSleep: 0, id: Date.now()+i });
         });
         db.league.find(t => t.isPlayer).name = "Tým " + db.name;
+        
+        // OPRAVA: Okamžitá aktualizace UI po kliknutí
+        updateUI(); 
+        generateShop();
+        
         document.getElementById('scr-reg').classList.remove('active');
         document.getElementById('top-ui').style.display = 'flex';
         document.getElementById('nav').style.display = 'flex';
-        generateShop(); save(); startTimers(); nav('match');
+        
+        save(); startTimers(); nav('match');
     }
 
-    function getTeamAvg() { return Math.round(db.players.reduce((a, b) => a + b.stat, 0) / db.players.length) || 1; }
+    function getTeamAvg() { 
+        if(db.players.length === 0) return 1;
+        return Math.round(db.players.reduce((a, b) => a + b.stat, 0) / db.players.length); 
+    }
 
     function runMatch() {
         let now = Date.now();
@@ -169,11 +179,9 @@
         if(ready.length < 6) return alert("Hráči spí nebo jsou unavení!");
         if(now - db.lastMatch < 60000) return alert("Hala se uklízí.");
 
-        // DYNAMICKÝ MATCHMAKING
         let myStrength = getTeamAvg();
         let base = Math.floor(myStrength / 10) * 10;
         let oppStrength = (base === 0) ? Math.floor(Math.random() * 8) + 1 : base + Math.floor(Math.random() * 8) + 1;
-        
         currentMatchOpponent = { name: "Hosté", strength: oppStrength };
         
         db.lastMatch = now;
@@ -197,8 +205,6 @@
     function processMatchResult(activePlayers) {
         let myP = getTeamAvg();
         let chance = 0.5 + (myP - currentMatchOpponent.strength) * 0.15;
-        
-        // PRVNÍ ZÁPAS VŽDY VÝHRA
         let win = (db.matchCount === 1) ? true : Math.random() < Math.max(0.1, Math.min(0.9, chance));
 
         if(win) {
@@ -217,101 +223,164 @@
     function initSimulation() {
         matchTime = 0; isPaused = false;
         document.getElementById('commentary-box').innerText = "Zápas začíná! Hráči vběhli na hřiště.";
+        
+        // Vytvoření hráčů pro animaci s vlastními souřadnicemi
+        playerDots = [];
+        for(let i=0; i<10; i++) {
+            playerDots.push({
+                x: Math.random()*300+10, y: Math.random()*180+10,
+                dx: (Math.random()-0.5)*2, dy: (Math.random()-0.5)*2, // Zpomalejší pohyb
+                color: i<5 ? "#fbbf24" : "#444"
+            });
+        }
     }
 
     function drawSimulation() {
         if(isPaused) return;
         const ctx = document.getElementById('sim-canvas').getContext('2d');
         ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0,0,320,200);
-        ctx.strokeStyle = "#fbbf24"; ctx.strokeRect(0,0,320,200);
+        ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 2; ctx.strokeRect(0,0,320,200);
         
-        // Náhodné pohyby pro vizuální efekt
-        for(let i=0; i<10; i++) {
-            ctx.fillStyle = i<5 ? "#fbbf24" : "#444";
-            ctx.beginPath(); ctx.arc(Math.random()*300+10, Math.random()*180+10, 5, 0, 7); ctx.fill();
-        }
+        // Plynulý pohyb hráčů
+        playerDots.forEach(p => {
+            p.x += p.dx; p.y += p.dy;
+            if(p.x < 5 || p.x > 315) p.dx *= -1;
+            if(p.y < 5 || p.y > 195) p.dy *= -1;
+            
+            ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 7); ctx.fill();
+        });
 
         matchTime += 0.033;
         document.getElementById('sim-time-text').innerText = "ČAS: " + Math.floor(matchTime) + "s";
         
-        // Vtipné hlášky každých 5 sekund
-        if(Math.floor(matchTime) % 5 === 0 && matchTime % 1 < 0.04) {
+        if(Math.floor(matchTime) % 5 === 0 && (matchTime % 1 < 0.04)) {
             document.getElementById('commentary-box').innerText = funnyLines[Math.floor(Math.random()*funnyLines.length)];
         }
 
-        if(Math.floor(matchTime) === 15) {
-            isPaused = true; document.getElementById('half-time-overlay').style.display='block';
-            document.getElementById('commentary-box').innerText = "Poločas! Hráči mění strany a manažer si dává párek.";
-            setTimeout(() => { isPaused=false; document.getElementById('half-time-overlay').style.display='none'; }, 2000);
-            matchTime += 1;
+        if(Math.floor(matchTime) === 15 && !isPaused) {
+            isPaused = true; 
+            document.getElementById('half-time-overlay').style.display='block';
+            setTimeout(() => { 
+                isPaused=false; 
+                document.getElementById('half-time-overlay').style.display='none'; 
+            }, 2000);
+            matchTime += 0.1;
         }
     }
 
-    // --- POMOCNÉ FUNKCE (Z minula) ---
+    function updateUI() { 
+        document.getElementById('money').innerText = db.money.toLocaleString(); 
+        document.getElementById('team-avg').innerText = getTeamAvg(); 
+        document.getElementById('player-count').innerText = db.players.length; 
+    }
+
     function nav(id) {
         db.usingItem = false; document.getElementById('use-msg').style.display = 'none';
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('selected'));
         document.getElementById('scr-'+id).classList.add('active');
         document.getElementById('n-'+id).classList.add('selected');
-        if(id === 'sleep') renderSleep(); if(id === 'shop') renderShop(); if(id === 'profile') renderBackpack(); if(id === 'match') renderLeague();
+        updateUI();
+        if(id === 'sleep') renderSleep(); 
+        if(id === 'shop') renderShop(); 
+        if(id === 'profile') renderBackpack(); 
+        if(id === 'match') renderLeague();
     }
 
-    function updateUI() { document.getElementById('money').innerText = db.money.toLocaleString(); document.getElementById('team-avg').innerText = getTeamAvg(); document.getElementById('player-count').innerText = db.players.length; }
-    
     function renderSleep() {
         const c = document.getElementById('sleep-list'); c.innerHTML = "";
         db.players.forEach(p => {
             let sleeping = (Date.now() - p.lastSleep) < 60000;
-            c.innerHTML += `<div class="card" onclick="giveDrink(${p.id})"><b>${p.name}</b> (Lvl ${p.stat}) | ${p.energy}% <div class="energy-container"><div class="energy-fill" style="width:${p.energy}%"></div></div> ${sleeping ? '<span class="sleeping-tag">💤 SPÍ - NELZE HRÁT</span>' : `<button onclick="individualSleep(${p.id})" ${(Date.now()-p.lastSleep < 600000)?'disabled':''}>POSLAT SPÁT</button>`}</div>`;
+            c.innerHTML += `<div class="card" onclick="giveDrink(${p.id})"><b>${p.name}</b> (Lvl ${p.stat}) | ${p.energy}% <div class="energy-container"><div class="energy-fill" style="width:${p.energy}%"></div></div> ${sleeping ? '<span class="sleeping-tag">💤 SPÍ - NELZE HRÁT</span>' : `<button onclick="individualSleep(${p.id}, event)" ${(Date.now()-p.lastSleep < 600000)?'disabled':''}>POSLAT SPÁT</button>`}</div>`;
         });
     }
 
-    function individualSleep(id) { let p = db.players.find(x => x.id === id); p.lastSleep = Date.now(); p.energy = 100; save(); renderSleep(); }
+    function individualSleep(id, event) { 
+        if(event) event.stopPropagation();
+        let p = db.players.find(x => x.id === id); p.lastSleep = Date.now(); p.energy = 100; save(); renderSleep(); 
+    }
+
     function renderBackpack() {
         const g = document.getElementById('backpack'); g.innerHTML = "";
-        for(let i=0; i<20; i++) { let it = db.inventory[i]; g.innerHTML += `<div class="inv-slot" onclick="prepareUseItem()">${it ? it.icon + '<span class="stack-count">x'+it.count+'</span>' : ''}</div>`; }
+        for(let i=0; i<20; i++) { 
+            let it = db.inventory[i]; 
+            g.innerHTML += `<div class="inv-slot" onclick="prepareUseItem()">${it ? it.icon + '<span class="stack-count">x'+it.count+'</span>' : ''}</div>`; 
+        }
     }
+
     function prepareUseItem() { db.usingItem = true; nav('sleep'); document.getElementById('use-msg').style.display = 'block'; }
+
     function giveDrink(id) {
         if(!db.usingItem) return;
-        let p = db.players.find(x => x.id === id); let idx = db.inventory.findIndex(i => i.name === 'Energeťák');
-        if(idx !== -1) { p.energy = 100; db.inventory[idx].count--; if(db.inventory[idx].count<=0) db.inventory.splice(idx,1); db.usingItem=false; document.getElementById('use-msg').style.display='none'; save(); renderSleep(); renderBackpack(); }
+        let p = db.players.find(x => x.id === id); 
+        let idx = db.inventory.findIndex(i => i.name === 'Energeťák');
+        if(idx !== -1) { 
+            p.energy = 100; db.inventory[idx].count--; 
+            if(db.inventory[idx].count<=0) db.inventory.splice(idx,1); 
+            db.usingItem=false; document.getElementById('use-msg').style.display='none'; 
+            save(); renderSleep(); renderBackpack(); 
+        }
     }
+
     function renderShop() {
         const l = document.getElementById('shop-list'); l.innerHTML = "";
-        db.shopItems.forEach((it, i) => { l.innerHTML += `<div class="card"><h3>${it.name}</h3><p>${it.price} 🪙</p><button onclick="buyShop(${i})">KOUPIT</button></div>`; });
+        db.shopItems.forEach((it, i) => { 
+            l.innerHTML += `<div class="card"><h3>${it.name}</h3><p>${it.price} 🪙</p><button onclick="buyShop(${i})">KOUPIT</button></div>`; 
+        });
     }
+
     function buyShop(i) {
         let it = db.shopItems[i]; if(db.money < it.price) return alert("Máš málo peněz!");
         if(it.type === 'player') {
-            let n = prompt("Jméno posily:", it.name); db.players.push({ name: n||it.name, stat: it.stat, energy: 100, lastSleep: 0, id: Date.now() });
+            let n = prompt("Jméno posily:", it.name); 
+            db.players.push({ name: n||it.name, stat: it.stat, energy: 100, lastSleep: 0, id: Date.now() });
         } else {
-            let s = db.inventory.find(x => x.name === 'Energeťák'); if(s) s.count++; else db.inventory.push({...it, count: 1});
+            let s = db.inventory.find(x => x.name === 'Energeťák'); 
+            if(s) s.count++; else db.inventory.push({...it, count: 1});
         }
         db.money -= it.price; db.shopItems.splice(i,1); save(); updateUI(); renderShop();
     }
+
     function generateShop() {
-        db.shopItems = []; for(let i=0; i<3; i++) { let s = Math.floor(Math.random()*(db.shopLvl*10))+1; db.shopItems.push({type:'player', stat:s, price: 5000+(s*1000), name: "Posila Lvl "+s}); }
-        db.shopItems.push({type:'item', name:'Energeťák', price:1000, icon:'🥤'}); renderShop();
+        db.shopItems = []; 
+        for(let i=0; i<3; i++) { 
+            let s = Math.floor(Math.random()*(db.shopLvl*10))+1; 
+            db.shopItems.push({type:'player', stat:s, price: 5000+(s*1000), name: "Posila Lvl "+s}); 
+        }
+        db.shopItems.push({type:'item', name:'Energeťák', price:1000, icon:'🥤'}); 
+        renderShop();
     }
+
     function renderLeague() {
         const b = document.getElementById('league-body'); b.innerHTML = "";
-        db.league.find(t=>t.isPlayer).strength = getTeamAvg();
-        db.league.sort((x,y)=>y.pts-x.pts).forEach((t, i) => { b.innerHTML += `<tr class="${t.isPlayer?'my-team-row':''}"><td>${i+1}</td><td>${t.name}</td><td>${t.strength}</td><td>${t.pts}</td></tr>`; });
+        let playerTeam = db.league.find(t=>t.isPlayer);
+        playerTeam.strength = getTeamAvg();
+        db.league.sort((x,y)=>y.pts-x.pts).forEach((t, i) => { 
+            b.innerHTML += `<tr class="${t.isPlayer?'my-team-row':''}"><td>${i+1}</td><td>${t.name}</td><td>${t.strength}</td><td>${t.pts}</td></tr>`; 
+        });
     }
+
     function startTimers() {
         setInterval(() => {
             db.shopReset--; if(db.shopReset<=0) { db.shopReset=120; generateShop(); }
             let wait = Math.ceil((60000-(Date.now()-db.lastMatch))/1000);
-            if(document.getElementById('match-timer-text')) document.getElementById('match-timer-text').innerText = wait>0 ? "Hala se uklízí: "+wait+"s" : "Můžeš hrát!";
+            if(document.getElementById('match-timer-text')) document.getElementById('match-timer-text').innerText = wait>0 ? "Úklid haly: "+wait+"s" : "Můžeš hrát!";
         }, 1000);
     }
-    function resetGame() { if(confirm("Smazat vše?")) { localStorage.clear(); location.reload(); } }
+
+    function resetGame() { if(confirm("Opravdu smazat celou kariéru?")) { localStorage.clear(); location.reload(); } }
 
     window.onload = () => {
-        let s = localStorage.getItem('fb_mgr_final_v1');
-        if(s) { db = JSON.parse(s); document.getElementById('scr-reg').classList.remove('active'); document.getElementById('top-ui').style.display = 'flex'; document.getElementById('nav').style.display = 'flex'; nav('match'); startTimers(); updateUI(); }
+        let s = localStorage.getItem('fb_mgr_final_smooth');
+        if(s) { 
+            db = JSON.parse(s); 
+            document.getElementById('scr-reg').classList.remove('active'); 
+            document.getElementById('top-ui').style.display = 'flex'; 
+            document.getElementById('nav').style.display = 'flex'; 
+            updateUI();
+            nav('match'); startTimers(); 
+        }
     };
 </script>
 </body>
