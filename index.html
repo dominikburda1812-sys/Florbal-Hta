@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager | Turbo Edition</title>
+    <title>Floorball Manager | Pro Edition</title>
     <style>
         :root {
             --bg-dark: #000000; --bg-card: #111111; --primary-gold: #fbbf24;
@@ -15,17 +15,21 @@
 
         .ui-bar { background-color: var(--bg-card); padding: 12px; border-bottom: 2px solid var(--primary-gold); display: flex; justify-content: space-around; align-items: center; font-weight: bold; font-size: 0.9em; }
         .screen { display: none; padding: 15px; height: 82vh; overflow-y: auto; padding-bottom: 100px; box-sizing: border-box; }
-        .screen.active { display: block; animation: fadeIn 0.3s; }
+        .screen.active { display: block; animation: fadeIn 0.2s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .card { background-color: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin: 12px auto; width: 92%; max-width: 380px; box-shadow: var(--shadow); }
-        button { background: linear-gradient(135deg, var(--secondary-gold), var(--primary-gold)); border: none; padding: 12px; border-radius: 10px; font-weight: bold; color: var(--bg-dark); text-transform: uppercase; width: 100%; cursor: pointer; }
-        button:disabled { background: #444; color: #888; cursor: not-allowed; }
+        button { background: linear-gradient(135deg, var(--secondary-gold), var(--primary-gold)); border: none; padding: 12px; border-radius: 10px; font-weight: bold; color: var(--bg-dark); text-transform: uppercase; width: 100%; cursor: pointer; transition: 0.1s; }
+        button:active { transform: scale(0.96); }
+        button:disabled { background: #333; color: #666; cursor: not-allowed; }
         input.setup-input { display: block; width: 85%; margin: 10px auto; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: #1a1a1a; color: white; }
 
-        .energy-container { background: #222; height: 12px; border-radius: 6px; margin: 12px 0; overflow: hidden; border: 1px solid #333; }
+        .energy-container { background: #222; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; border: 1px solid #333; }
         .energy-fill { background: linear-gradient(90deg, #ca8a04, var(--primary-gold)); height: 100%; transition: width 0.3s; }
-        .sleeping-tag { color: #ef4444; font-size: 0.85em; font-weight: bold; display: block; margin-top: 8px; }
+        
+        .timer-tag { font-size: 0.8em; font-weight: bold; padding: 4px 8px; border-radius: 5px; margin-top: 5px; display: inline-block; }
+        .sleeping { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
+        .cooldown { color: #f87171; background: rgba(248, 113, 113, 0.1); }
 
         .inventory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #080808; padding: 15px; border-radius: 12px; }
         .inv-slot { aspect-ratio: 1; background: var(--bg-card); border: 1px dashed var(--border); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 28px; position: relative; }
@@ -43,7 +47,7 @@
         #sim-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 1000; padding-top: 20px; }
         #sim-canvas { background: #0a0a0a; border: 3px solid var(--primary-gold); border-radius: 12px; }
         #commentary-box { background: rgba(251, 191, 36, 0.1); border: 1px solid var(--primary-gold); margin: 15px auto; width: 90%; padding: 10px; border-radius: 10px; min-height: 50px; color: var(--primary-gold); font-style: italic; font-size: 0.9em; }
-        #half-time-overlay { display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 20px; border: 2px solid var(--primary-gold); color: var(--primary-gold); font-weight: bold; border-radius: 10px; z-index: 1100; }
+        #half-time-overlay { display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(251, 191, 36, 0.9); padding: 15px 30px; color: #000; font-weight: bold; border-radius: 5px; z-index: 1100; }
     </style>
 </head>
 <body>
@@ -73,7 +77,7 @@
 
 <div id="scr-sleep" class="screen">
     <h2>Kabina 🛌</h2>
-    <p id="use-msg" style="display:none; color: var(--primary-gold);">Klikni na hráče pro Energeťák!</p>
+    <p id="use-msg" style="display:none; color: var(--primary-gold); font-weight:bold;">Vyber hráče pro Energeťák!</p>
     <div id="sleep-list"></div>
 </div>
 
@@ -106,7 +110,7 @@
         <canvas id="sim-canvas" width="320" height="200"></canvas>
         <div id="half-time-overlay">POLOČAS</div>
     </div>
-    <div id="commentary-box">Zápas začíná!</div>
+    <div id="commentary-box">Připravte se, začínáme!</div>
 </div>
 
 <div id="nav" class="nav-bar" style="display:none">
@@ -129,25 +133,13 @@
         ]
     };
 
-    const funnyLines = [
-        "Manažer právě zakopl o střídačku!",
-        "Gólman chytil míček... vlastním břichem.",
-        "Pepík právě trefil babičku v první řadě!",
-        "Míček se zasekl v mantinelu, hraje se dál botou.",
-        "Rozhodčí si právě čistí brýle, nic neviděl.",
-        "Hráč zkouší otočku, ale zamotal se do hokejky.",
-        "Diváci skandují: 'Kde je pivo?!'",
-        "Gólman zrovna svačí, ale míček ho trefil do masky!",
-        "Neskutečná střela! Ale trefila jenom strop haly.",
-        "To byla rána! Gólmanovi právě uletěla helma."
-    ];
-
+    const funnyLines = ["Gólman chytil míček do pusy!", "Hráč trefil rozhodčího přímo do nosu.", "Divák vběhl na hřiště, ale nikdo si ho nevšiml.", "Míček se zastavil na brankové čáře!", "Manažer právě usnul na střídačce.", "Hráč udělal parádní kličku... sám sobě."];
     let simInterval = null;
     let matchTime = 0;
     let isPaused = false;
     let playerDots = [];
 
-    function save() { localStorage.setItem('fb_mgr_turbo_v1', JSON.stringify(db)); }
+    function save() { localStorage.setItem('fb_mgr_pro_v1', JSON.stringify(db)); }
 
     function createTeam() {
         db.name = document.getElementById('mgr-name').value || "Manažer";
@@ -155,31 +147,25 @@
             db.players.push({ name: input.value || ("Hráč "+(i+1)), stat: 1, energy: 100, lastSleep: 0, id: Date.now()+i });
         });
         db.league.find(t => t.isPlayer).name = "Tým " + db.name;
-        updateUI(); 
-        generateShop();
+        updateUI(); generateShop();
         document.getElementById('scr-reg').classList.remove('active');
         document.getElementById('top-ui').style.display = 'flex';
         document.getElementById('nav').style.display = 'flex';
         save(); startTimers(); nav('match');
     }
 
-    function getTeamAvg() { 
-        if(db.players.length === 0) return 1;
-        return Math.round(db.players.reduce((a, b) => a + b.stat, 0) / db.players.length); 
-    }
+    function getTeamAvg() { return Math.round(db.players.reduce((a, b) => a + b.stat, 0) / db.players.length) || 1; }
 
     function runMatch() {
         let now = Date.now();
         const ready = db.players.filter(p => p.energy >= 30 && (now - p.lastSleep > 60000));
-        if(ready.length < 6) return alert("Hráči spí nebo jsou unavení!");
-        if(now - db.lastMatch < 60000) return alert("Hala se uklízí.");
+        if(ready.length < 6) return alert("Máš málo hráčů! Někdo spí nebo je unavený.");
+        if(now - db.lastMatch < 60000) return alert("Hala se připravuje.");
 
-        let myStrength = getTeamAvg();
-        let base = Math.floor(myStrength / 10) * 10;
-        let oppStrength = (base === 0) ? Math.floor(Math.random() * 8) + 1 : base + Math.floor(Math.random() * 8) + 1;
+        let myS = getTeamAvg();
+        let oppS = Math.max(1, Math.floor(myS/10)*10 + Math.floor(Math.random()*8) + 1);
         
-        db.lastMatch = now;
-        db.matchCount++;
+        db.lastMatch = now; db.matchCount++;
         document.getElementById('nav').style.display = 'none';
         document.getElementById('scr-match').classList.remove('active');
         document.getElementById('sim-container').style.display = 'block';
@@ -192,28 +178,20 @@
             document.getElementById('sim-container').style.display = 'none';
             document.getElementById('nav').style.display = 'flex';
             document.getElementById('scr-match').classList.add('active');
-            processMatchResult(ready, oppStrength);
+            processMatchResult(ready, oppS);
         }, 32000);
     }
 
-    function processMatchResult(activePlayers, oppStrength) {
-        let myP = getTeamAvg();
-        let chance = 0.5 + (myP - oppStrength) * 0.15;
+    function processMatchResult(activePlayers, oppS) {
+        let chance = 0.5 + (getTeamAvg() - oppS) * 0.15;
         let win = (db.matchCount === 1) ? true : Math.random() < Math.max(0.1, Math.min(0.9, chance));
-
-        if(win) {
-            db.money += 500; db.league.find(t => t.isPlayer).pts += 3;
-            alert("VÝHRA! +500 🪙");
-        } else alert("PROHRA! Zkus posílit tým.");
-
-        // NAHODNÁ ZTRÁTA ENERGIE 1-10%
+        if(win) { db.money += 500; db.league.find(t=>t.isPlayer).pts += 3; alert("VÝHRA! Tým slaví."); } 
+        else alert("PROHRA! Příště to vyjde.");
         activePlayers.slice(0,6).forEach(p => {
             let pDb = db.players.find(x => x.id === p.id);
-            let drop = Math.floor(Math.random() * 10) + 1; // 1 až 10
-            pDb.energy = Math.max(0, pDb.energy - drop);
+            pDb.energy = Math.max(0, pDb.energy - (Math.floor(Math.random()*10)+1));
         });
-
-        db.league.forEach(t => { if(!t.isPlayer) t.pts += (Math.random() > 0.6 ? 3 : 0); });
+        db.league.forEach(t => { if(!t.isPlayer) t.pts += (Math.random()>0.6?3:0); });
         save(); updateUI(); renderLeague();
     }
 
@@ -221,11 +199,7 @@
         matchTime = 0; isPaused = false;
         playerDots = [];
         for(let i=0; i<10; i++) {
-            playerDots.push({
-                x: Math.random()*300+10, y: Math.random()*180+10,
-                dx: (Math.random()-0.5)*5, dy: (Math.random()-0.5)*5, // RYCHLEJŠÍ POHYB
-                color: i<5 ? "#fbbf24" : "#444"
-            });
+            playerDots.push({ x: Math.random()*300+10, y: Math.random()*180+10, dx: (Math.random()-0.5)*7, dy: (Math.random()-0.5)*7, color: i<5 ? "#fbbf24" : "#444" });
         }
     }
 
@@ -234,58 +208,66 @@
         const ctx = document.getElementById('sim-canvas').getContext('2d');
         ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0,0,320,200);
         ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 2; ctx.strokeRect(0,0,320,200);
-        
         playerDots.forEach(p => {
             p.x += p.dx; p.y += p.dy;
-            if(p.x < 5 || p.x > 315) p.dx *= -1;
-            if(p.y < 5 || p.y > 195) p.dy *= -1;
-            ctx.fillStyle = p.color;
-            ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 7); ctx.fill();
+            if(p.x<5 || p.x>315) p.dx *= -1; if(p.y<5 || p.y>195) p.dy *= -1;
+            ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 7); ctx.fill();
         });
-
         matchTime += 0.033;
         document.getElementById('sim-time-text').innerText = "ČAS: " + Math.floor(matchTime) + "s";
-        
-        if(Math.floor(matchTime) % 5 === 0 && (matchTime % 1 < 0.04)) {
-            document.getElementById('commentary-box').innerText = funnyLines[Math.floor(Math.random()*funnyLines.length)];
-        }
-
+        if(Math.floor(matchTime) % 5 === 0 && (matchTime % 1 < 0.04)) document.getElementById('commentary-box').innerText = funnyLines[Math.floor(Math.random()*funnyLines.length)];
         if(Math.floor(matchTime) === 15 && !isPaused) {
             isPaused = true; document.getElementById('half-time-overlay').style.display='block';
-            setTimeout(() => { isPaused=false; document.getElementById('half-time-overlay').style.display='none'; }, 2000);
-            matchTime += 0.1;
+            setTimeout(() => { isPaused=false; document.getElementById('half-time-overlay').style.display='none'; }, 800); // RYCHLÝ POLOČAS
         }
     }
 
-    // --- ZBYTEK LOGIKY ---
-    function updateUI() { 
-        document.getElementById('money').innerText = db.money.toLocaleString(); 
-        document.getElementById('team-avg').innerText = getTeamAvg(); 
-        document.getElementById('player-count').innerText = db.players.length; 
+    function renderSleep() {
+        const c = document.getElementById('sleep-list'); c.innerHTML = "";
+        const now = Date.now();
+        db.players.forEach(p => {
+            let elapsed = now - p.lastSleep;
+            let isSleeping = elapsed < 60000;
+            let onCooldown = elapsed < 600000; // 10 minut celkem (1 sleep + 9 cooldown)
+            
+            let statusHTML = "";
+            let btnDisabled = false;
+
+            if(isSleeping) {
+                let rem = Math.ceil((60000 - elapsed) / 1000);
+                statusHTML = `<span class="timer-tag sleeping">💤 SPÍ: ${rem}s</span>`;
+                btnDisabled = true;
+            } else if(onCooldown) {
+                let rem = Math.ceil((600000 - elapsed) / 1000);
+                statusHTML = `<span class="timer-tag cooldown">⏳ COOLDOWN: ${Math.floor(rem/60)}m ${rem%60}s</span>`;
+                btnDisabled = true;
+            }
+
+            c.innerHTML += `<div class="card" onclick="giveDrink(${p.id})">
+                <b>${p.name}</b> (Lvl ${p.stat}) | ${p.energy}% 
+                <div class="energy-container"><div class="energy-fill" style="width:${p.energy}%"></div></div>
+                ${statusHTML}
+                <button onclick="individualSleep(${p.id}, event)" ${btnDisabled ? 'disabled' : ''}>Poslat spát (1m)</button>
+            </div>`;
+        });
     }
 
+    function individualSleep(id, e) { if(e) e.stopPropagation(); let p = db.players.find(x=>x.id===id); p.lastSleep = Date.now(); p.energy = 100; save(); renderSleep(); }
+    
+    function updateUI() { document.getElementById('money').innerText = db.money.toLocaleString(); document.getElementById('team-avg').innerText = getTeamAvg(); document.getElementById('player-count').innerText = db.players.length; }
     function nav(id) {
-        db.usingItem = false; document.getElementById('use-msg').style.display = 'none';
+        db.usingItem = false; document.getElementById('use-msg').style.display='none';
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('selected'));
         document.getElementById('scr-'+id).classList.add('active');
         document.getElementById('n-'+id).classList.add('selected');
         updateUI();
-        if(id === 'sleep') renderSleep(); if(id === 'shop') renderShop(); if(id === 'profile') renderBackpack(); if(id === 'match') renderLeague();
+        if(id==='sleep') renderSleep(); if(id==='shop') renderShop(); if(id==='profile') renderBackpack(); if(id==='match') renderLeague();
     }
 
-    function renderSleep() {
-        const c = document.getElementById('sleep-list'); c.innerHTML = "";
-        db.players.forEach(p => {
-            let sleeping = (Date.now() - p.lastSleep) < 60000;
-            c.innerHTML += `<div class="card" onclick="giveDrink(${p.id})"><b>${p.name}</b> (Lvl ${p.stat}) | ${p.energy}% <div class="energy-container"><div class="energy-fill" style="width:${p.energy}%"></div></div> ${sleeping ? '<span class="sleeping-tag">💤 SPÍ</span>' : `<button onclick="individualSleep(${p.id}, event)" ${(Date.now()-p.lastSleep < 600000)?'disabled':''}>POSLAT SPÁT</button>`}</div>`;
-        });
-    }
-
-    function individualSleep(id, event) { if(event) event.stopPropagation(); let p = db.players.find(x => x.id === id); p.lastSleep = Date.now(); p.energy = 100; save(); renderSleep(); }
     function renderBackpack() { const g = document.getElementById('backpack'); g.innerHTML = ""; db.inventory.forEach(it => { g.innerHTML += `<div class="inv-slot" onclick="prepareUseItem()">${it.icon}<span class="stack-count">x${it.count}</span></div>`; }); for(let i=db.inventory.length; i<12; i++) g.innerHTML += `<div class="inv-slot"></div>`; }
-    function prepareUseItem() { db.usingItem = true; nav('sleep'); document.getElementById('use-msg').style.display = 'block'; }
-    function giveDrink(id) { if(!db.usingItem) return; let p = db.players.find(x => x.id === id); let idx = db.inventory.findIndex(i => i.name === 'Energeťák'); if(idx !== -1) { p.energy = 100; db.inventory[idx].count--; if(db.inventory[idx].count<=0) db.inventory.splice(idx,1); db.usingItem=false; document.getElementById('use-msg').style.display='none'; save(); renderSleep(); renderBackpack(); } }
+    function prepareUseItem() { db.usingItem = true; nav('sleep'); document.getElementById('use-msg').style.display='block'; }
+    function giveDrink(id) { if(!db.usingItem) return; let p = db.players.find(x=>x.id===id); let idx = db.inventory.findIndex(i=>i.name==='Energeťák'); if(idx!==-1){ p.energy=100; db.inventory[idx].count--; if(db.inventory[idx].count<=0)db.inventory.splice(idx,1); db.usingItem=false; document.getElementById('use-msg').style.display='none'; save(); renderSleep(); renderBackpack(); } }
     function renderShop() { const l = document.getElementById('shop-list'); l.innerHTML = ""; db.shopItems.forEach((it, i) => { l.innerHTML += `<div class="card"><h3>${it.name}</h3><p>${it.price} 🪙</p><button onclick="buyShop(${i})">KOUPIT</button></div>`; }); }
     function buyShop(i) {
         let it = db.shopItems[i]; if(db.money < it.price) return alert("Máš málo peněz!");
@@ -295,12 +277,20 @@
     }
     function generateShop() { db.shopItems = []; for(let i=0; i<3; i++) { let s = Math.floor(Math.random()*(db.shopLvl*10))+1; db.shopItems.push({type:'player', stat:s, price: 5000+(s*1000), name: "Posila Lvl "+s}); } db.shopItems.push({type:'item', name:'Energeťák', price:1000, icon:'🥤'}); renderShop(); }
     function renderLeague() { const b = document.getElementById('league-body'); b.innerHTML = ""; let pt = db.league.find(t=>t.isPlayer); pt.strength = getTeamAvg(); db.league.sort((x,y)=>y.pts-x.pts).forEach((t, i) => { b.innerHTML += `<tr class="${t.isPlayer?'my-team-row':''}"><td>${i+1}</td><td>${t.name}</td><td>${t.strength}</td><td>${t.pts}</td></tr>`; }); }
-    function startTimers() { setInterval(() => { db.shopReset--; if(db.shopReset<=0) { db.shopReset=120; generateShop(); } let wait = Math.ceil((60000-(Date.now()-db.lastMatch))/1000); if(document.getElementById('match-timer-text')) document.getElementById('match-timer-text').innerText = wait>0 ? "Úklid: "+wait+"s" : "Můžeš hrát!"; }, 1000); }
+    
+    function startTimers() {
+        setInterval(() => {
+            db.shopReset--; if(db.shopReset<=0) { db.shopReset=120; generateShop(); }
+            if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep();
+            let wait = Math.ceil((60000-(Date.now()-db.lastMatch))/1000);
+            if(document.getElementById('match-timer-text')) document.getElementById('match-timer-text').innerText = wait>0 ? "Příprava haly: "+wait+"s" : "Můžeš hrát!";
+        }, 1000);
+    }
     function resetGame() { if(confirm("Smazat vše?")) { localStorage.clear(); location.reload(); } }
 
     window.onload = () => {
-        let s = localStorage.getItem('fb_mgr_turbo_v1');
-        if(s) { db = JSON.parse(s); document.getElementById('scr-reg').classList.remove('active'); document.getElementById('top-ui').style.display = 'flex'; document.getElementById('nav').style.display = 'flex'; updateUI(); nav('match'); startTimers(); }
+        let s = localStorage.getItem('fb_mgr_pro_v1');
+        if(s) { db = JSON.parse(s); document.getElementById('scr-reg').classList.remove('active'); document.getElementById('top-ui').style.display='flex'; document.getElementById('nav').style.display='flex'; updateUI(); nav('match'); startTimers(); }
     };
 </script>
 </body>
