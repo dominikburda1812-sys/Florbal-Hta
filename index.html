@@ -2,11 +2,11 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager | Sound Edition</title>
+    <title>Floorball Manager | Ultimate Edition</title>
     <style>
         :root {
             --primary-gold: #fbbf24; --secondary-gold: #f59e0b; --text-main: #f8fafc;
-            --glass: rgba(0, 0, 0, 0.75); --border: rgba(255, 255, 255, 0.1);
+            --glass: rgba(0, 0, 0, 0.8); --border: rgba(255, 255, 255, 0.1);
             --bg-reg: radial-gradient(circle at top, #1e293b, #000);
             --bg-sleep: radial-gradient(circle at top, #1e1b4b, #020617);
             --bg-match: radial-gradient(circle at top, #064e3b, #020617);
@@ -14,239 +14,285 @@
             --bg-profile: radial-gradient(circle at top, #0f172a, #000);
         }
 
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-reg); background-attachment: fixed; color: var(--text-main); margin: 0; text-align: center; overflow: hidden; transition: background 0.5s ease; }
-        .grid-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 30px 30px; z-index: -1; }
-        
-        .ui-bar { background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-around; font-weight: bold; }
-        .screen { display: none; padding: 15px; height: 82vh; overflow-y: auto; padding-bottom: 100px; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-reg); margin: 0; text-align: center; color: var(--text-main); overflow: hidden; }
+        .ui-bar { background: rgba(0,0,0,0.9); padding: 15px; display: flex; justify-content: space-around; font-weight: bold; border-bottom: 1px solid var(--border); }
+        .screen { display: none; padding: 15px; height: 85vh; overflow-y: auto; box-sizing: border-box; padding-bottom: 100px; }
         .screen.active { display: block; }
 
-        .card { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 18px; padding: 15px; margin: 10px auto; width: 92%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        button { background: linear-gradient(135deg, var(--secondary-gold), var(--primary-gold)); border: none; padding: 12px; border-radius: 10px; font-weight: 800; color: #000; text-transform: uppercase; width: 100%; cursor: pointer; }
+        .card { background: var(--glass); border-radius: 15px; padding: 15px; margin: 10px auto; width: 92%; max-width: 400px; border: 1px solid var(--border); }
+        button { background: linear-gradient(135deg, var(--secondary-gold), var(--primary-gold)); border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; }
+        
+        /* Kabina & Energie */
+        .energy-container { background: #333; height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
+        .energy-bar { height: 100%; background: #22c55e; transition: width 0.3s; }
 
-        /* Balíčky */
-        .pack { border: 3px solid; padding: 20px; border-radius: 20px; margin: 10px 0; cursor: pointer; }
-        .pack-bronze { background: linear-gradient(145deg, #78350f, #451a03); border-color: #d97706; }
-        .pack-silver { background: linear-gradient(145deg, #475569, #1e293b); border-color: #cbd5e1; }
-        .pack-gold { background: linear-gradient(145deg, #854d0e, #fbbf24); border-color: #fef08a; color: #000; font-weight: bold; }
+        /* Batoh */
+        .inv-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+        .inv-slot { aspect-ratio: 1; background: rgba(255,255,255,0.05); border: 1px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.2em; }
+        .stack-count { position: absolute; bottom: 2px; right: 4px; font-size: 10px; background: #000; padding: 0 3px; border-radius: 3px; color: var(--primary-gold); }
 
-        /* Pack Opener */
+        /* Simulace */
+        .scoreboard { background: #111; border: 2px solid var(--primary-gold); display: flex; justify-content: center; align-items: center; width: 300px; margin: 0 auto 10px; border-radius: 8px; padding: 10px; }
+        .score-box { background: #000; color: var(--primary-gold); padding: 5px 15px; font-size: 1.5em; margin: 0 10px; font-family: monospace; }
+        #sim-canvas { background: #064e3b; border: 3px solid #fff; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+
+        /* Balíčky - Animace */
         #pack-opener { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
-        .card-silhouette { width: 220px; height: 310px; background: #111; border: 5px solid transparent; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 4em; }
-        .glow-gold { border-color: #fbbf24; box-shadow: 0 0 50px #fbbf24; }
-        .glow-silver { border-color: #cbd5e1; box-shadow: 0 0 30px #cbd5e1; }
-        .glow-bronze { border-color: #d97706; box-shadow: 0 0 30px #d97706; }
+        .reveal-card { width: 220px; height: 310px; background: #fff; border: 10px solid var(--primary-gold); border-radius: 20px; color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; animation: flipCard 0.6s ease-out; }
+        @keyframes flipCard { from { transform: rotateY(90deg); } to { transform: rotateY(0); } }
 
-        .reveal-card { width: 220px; height: 310px; background: #fff; border: 10px solid var(--primary-gold); border-radius: 20px; color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; animation: flipCard 0.6s ease-out; box-shadow: 0 0 50px var(--primary-gold); }
-        @keyframes flipCard { from { transform: rotateY(90deg); opacity: 0; } to { transform: rotateY(0); opacity: 1; } }
-
-        /* Scoreboard */
-        .scoreboard { background: #111; border: 2px solid var(--primary-gold); display: flex; justify-content: center; align-items: center; width: 300px; margin: 0 auto 10px; border-radius: 8px; padding: 8px; font-family: monospace; }
-        .score-box { background: #000; color: var(--primary-gold); padding: 5px 15px; font-size: 1.5em; border-radius: 5px; margin: 0 10px; }
-
-        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 70px; background: #000; display: flex; border-top: 1px solid var(--border); z-index: 100; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 70px; background: #000; display: flex; border-top: 1px solid var(--border); }
         .nav-item { flex: 1; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #444; }
         .nav-item.selected { color: var(--primary-gold); }
     </style>
 </head>
-<body id="main-body">
-<div class="grid-overlay"></div>
+<body>
 
 <div id="top-ui" style="display:none" class="ui-bar">
     <span>💰 <span id="money">0</span></span>
-    <span>📊 AVG: <span id="team-avg">0</span></span>
     <span>👥 <span id="player-count">0</span>/20</span>
 </div>
 
 <div id="scr-reg" class="screen active">
     <h1>FLORBAL MANAŽER</h1>
     <div class="card">
-        <input type="text" id="mgr-name" style="width:85%; padding:15px; border-radius:10px; margin-bottom:15px; border:none;" placeholder="JMÉNO MANAŽERA">
-        <button onclick="createTeam()">ZALOŽIT KLUB</button>
+        <input type="text" id="mgr-name" style="width:80%; padding:15px; margin-bottom:15px;" placeholder="JMÉNO TÝMU">
+        <button onclick="createTeam()">START</button>
     </div>
-</div>
-
-<div id="scr-shop" class="screen">
-    <h2>OBCHOD S BALÍČKY 📦</h2>
-    <div class="card pack pack-bronze" onclick="buyPack('bronze')"><h3>BRONZ</h3><p>Lvl 1-6</p><b>1 000 🪙</b></div>
-    <div class="card pack pack-silver" onclick="buyPack('silver')"><h3>STŘÍBRNÝ</h3><p>Lvl 7-15</p><b>5 000 🪙</b></div>
-    <div class="card pack pack-gold" onclick="buyPack('gold')"><h3>ZLATÝ</h3><p>Lvl 16-35</p><b>10 000 🪙</b></div>
 </div>
 
 <div id="scr-match" class="screen">
     <h2>LIGA 🏆</h2>
-    <div class="card" style="width:95%;">
-        <table style="width:100%; font-size:0.9em;"><thead><tr><th>#</th><th>TÝM</th><th>LVL</th><th>PTS</th></tr></thead><tbody id="league-body"></tbody></table>
-    </div>
+    <div id="league-list" class="card"></div>
     <div class="card">
-        <button id="match-btn" onclick="runMatch()">HRÁT ZÁPAS (30s)</button>
-        <p id="match-timer-text" style="color:gray;"></p>
+        <button onclick="runMatch()">HRÁT ZÁPAS (30s)</button>
+        <p id="match-wait"></p>
     </div>
 </div>
 
-<div id="scr-sleep" class="screen"><h2>KABINA 🛌</h2><div id="sleep-list"></div></div>
-<div id="scr-profile" class="screen"><h2>PROFIL 👤</h2><div class="card"><h3>🎒 BATOH</h3><div id="backpack" style="display:grid; grid-template-columns:repeat(5,1fr); gap:5px;"></div></div><button style="background:#ef4444; color:white; margin-top:20px;" onclick="resetGame()">RESET</button></div>
+<div id="scr-shop" class="screen">
+    <h2>OBCHOD 📦</h2>
+    <div class="card" onclick="buyPack('bronze')" style="background: #78350f;">BRONZ (1 000 🪙)</div>
+    <div class="card" onclick="buyPack('silver')" style="background: #475569;">STŘÍBRNÝ (5 000 🪙)</div>
+    <div class="card" onclick="buyPack('gold')" style="background: #854d0e;">ZLATÝ (10 000 🪙)</div>
+    <div class="card" onclick="buyItem('drink')" style="background: #1e3a8a;">ENERGEŤÁK (500 🪙)</div>
+</div>
+
+<div id="scr-sleep" class="screen">
+    <h2>KABINA 🛌</h2>
+    <div id="sleep-list"></div>
+</div>
+
+<div id="scr-profile" class="screen">
+    <h2>BATOH 🎒</h2>
+    <div class="card">
+        <div id="backpack" class="inv-grid"></div>
+    </div>
+    <button onclick="resetGame()" style="background:red; color:white; margin-top:20px;">RESET HRY</button>
+</div>
+
+<div id="sim-container" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:3000;">
+    <div class="scoreboard">
+        <div id="sb-home">DOM</div>
+        <div class="score-box"><span id="sc-h">0</span>:<span id="sc-a">0</span></div>
+        <div id="sb-away">HOS</div>
+    </div>
+    <h2 id="sim-timer">30s</h2>
+    <canvas id="sim-canvas" width="320" height="240"></canvas>
+    <div id="commentary" style="padding:20px; color:var(--primary-gold);">Zápas v plném proudu!</div>
+</div>
 
 <div id="pack-opener">
-    <div id="reveal-container"></div>
-    <button id="pack-btn" style="width:200px; margin-top:25px; display:none;" onclick="closePack()">PŘIDAT DO TÝMU</button>
-</div>
-
-<div id="sim-container" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; padding-top:20px;">
-    <div class="scoreboard">
-        <div style="flex:1; font-size:0.7em;" id="sb-home">DOMÁCÍ</div>
-        <div class="score-box"><span id="sc-home">0</span>:<span id="sc-away">0</span></div>
-        <div style="flex:1; font-size:0.7em;" id="sb-away">HOSTÉ</div>
-    </div>
-    <canvas id="sim-canvas" width="320" height="200" style="border:1px solid #333;"></canvas>
-    <div id="commentary" class="card" style="margin-top:20px; color:var(--primary-gold);">Zápas začíná...</div>
+    <div id="reveal-area"></div>
+    <button id="pack-close" style="width:200px; display:none; margin-top:20px;" onclick="closePack()">PŘIDAT DO TÝMU</button>
 </div>
 
 <div id="nav" class="nav-bar" style="display:none">
-    <div class="nav-item" id="n-sleep" onclick="nav('sleep')">🛌</div>
-    <div class="nav-item selected" id="n-match" onclick="nav('match')">🥅</div>
-    <div class="nav-item" id="n-shop" onclick="nav('shop')">📦</div>
-    <div class="nav-item" id="n-profile" onclick="nav('profile')">👤</div>
+    <div class="nav-item" onclick="nav('sleep')">🛌</div>
+    <div class="nav-item selected" onclick="nav('match')">🥅</div>
+    <div class="nav-item" onclick="nav('shop')">📦</div>
+    <div class="nav-item" onclick="nav('profile')">🎒</div>
 </div>
 
 <script>
     let db = {
-        name: "", money: 2000, lastMatch: 0, players: [], inventory: [],
-        league: [
-            { name: "FK Kuličky", strength: 5, pts: 0 }, { name: "SK Beton", strength: 14, pts: 0 },
-            { name: "HC Prach", strength: 25, pts: 0 }, { name: "Lvi z Lhoty", strength: 35, pts: 0 },
-            { name: "Můj Tým", strength: 0, pts: 0, isPlayer: true }
-        ]
+        money: 2000, players: [], inventory: [], lastMatch: 0,
+        league: [{n:"Lvi", s:10, p:0}, {n:"Panteři", s:20, p:0}, {n:"Vlci", s:30, p:0}]
     };
 
-    // --- AUDIO ENGINE ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    function playPackSound() {
-        const type = Math.floor(Math.random() * 10); // 10 různých zvuků
+    function playSound() {
         const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        
-        const now = audioCtx.currentTime;
-        
-        // Seznam 10 různých nastavení zvuků (náhodné přehazování)
-        switch(type) {
-            case 0: osc.type = 'sine'; osc.frequency.setValueAtTime(440, now); osc.frequency.exponentialRampToValueAtTime(880, now + 0.5); break;
-            case 1: osc.type = 'square'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.3); break;
-            case 2: osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now); osc.frequency.setValueAtTime(500, now + 0.1); osc.frequency.setValueAtTime(800, now + 0.2); break;
-            case 3: osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.linearRampToValueAtTime(1000, now + 0.2); break;
-            case 4: osc.type = 'sine'; osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(440, now + 0.5); break;
-            case 5: osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.setValueAtTime(450, now + 0.05); osc.frequency.setValueAtTime(500, now + 0.1); break;
-            case 6: osc.type = 'triangle'; osc.frequency.setValueAtTime(220, now); osc.frequency.linearRampToValueAtTime(440, now + 0.4); break;
-            case 7: osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.setValueAtTime(200, now + 0.3); break;
-            case 8: osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(150, now + 0.5); break;
-            case 9: osc.type = 'sawtooth'; osc.frequency.setValueAtTime(500, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1); break;
-        }
-
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-        
-        osc.start();
-        osc.stop(now + 0.5);
+        const g = audioCtx.createGain();
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(200 + Math.random()*800, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     }
 
-    function save() { localStorage.setItem('fb_mgr_sound_v10', JSON.stringify(db)); }
-
-    function buyPack(type) {
-        let p = { bronze: 1000, silver: 5000, gold: 10000 };
-        if(db.money < p[type]) return alert("Máš málo peněz!");
-        db.money -= p[type]; updateUI();
-        
-        document.getElementById('pack-opener').style.display = 'flex';
-        document.getElementById('pack-btn').style.display = 'none';
-        
-        let lvl = type==='bronze' ? Math.floor(Math.random()*6)+1 : (type==='silver' ? Math.floor(Math.random()*9)+7 : Math.floor(Math.random()*20)+16);
-        let names = ["Jágr", "Pastrňák", "Hertl", "Voráček", "Hašek", "Eliáš", "Palát", "Slanina"];
-        let pName = names[Math.floor(Math.random()*names.length)];
-        window.pulled = { name: pName, stat: lvl, energy: 100, lastSleep: 0, id: Date.now() };
-
-        let container = document.getElementById('reveal-container');
-        container.innerHTML = `<div class="card-silhouette glow-${type}">?</div>`;
-
-        setTimeout(() => {
-            container.innerHTML = `<div class="card-silhouette glow-${type}"><div style="color:white; text-shadow:0 0 10px #fff;">${pName[0]}...</div></div>`;
-        }, 1200);
-
-        setTimeout(() => {
-            playPackSound(); // PŘEHRÁT JEDEN Z 10 ZVUKŮ
-            container.innerHTML = `<div class="reveal-card"><h2>ELITE</h2><h1 style="font-size:5em;margin:10px 0;">${lvl}</h1><h2>${pName.toUpperCase()}</h2></div>`;
-            document.getElementById('pack-btn').style.display = 'block';
-        }, 2800);
-    }
-
-    // --- ZÁKLADNÍ LOGIKA ZŮSTÁVÁ ---
     function nav(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('selected'));
         document.getElementById('scr-'+id).classList.add('active');
-        document.getElementById('n-'+id).classList.add('selected');
-        document.getElementById('main-body').style.background = `var(--bg-${id})`;
+        if(id==='sleep') renderSleep();
+        if(id==='profile') renderBackpack();
+        if(id==='match') renderLeague();
         updateUI();
-        if(id==='sleep') renderSleep(); if(id==='match') renderLeague();
     }
 
     function createTeam() {
-        db.name = document.getElementById('mgr-name').value || "Manažer";
-        for(let i=0; i<6; i++) db.players.push({ name: "Hráč "+(i+1), stat: 1, energy: 100, lastSleep: 0, id: Date.now()+i });
-        db.league.find(t => t.isPlayer).name = db.name;
+        let n = document.getElementById('mgr-name').value || "Můj Tým";
+        db.teamName = n;
+        for(let i=0; i<6; i++) db.players.push({name: "Hráč "+(i+1), stat: 5, energy: 100, id: Date.now()+i});
         document.getElementById('scr-reg').classList.remove('active');
-        document.getElementById('top-ui').style.display='flex'; document.getElementById('nav').style.display='flex';
-        save(); startTimers(); nav('match');
+        document.getElementById('nav').style.display = 'flex';
+        document.getElementById('top-ui').style.display = 'flex';
+        save(); nav('match');
+    }
+
+    function renderSleep() {
+        const list = document.getElementById('sleep-list');
+        list.innerHTML = "";
+        db.players.forEach(p => {
+            list.innerHTML += `
+                <div class="card">
+                    <b>${p.name}</b> (Lvl ${p.stat}) - ${p.energy}%
+                    <div class="energy-container"><div class="energy-bar" style="width:${p.energy}%; background:${p.energy < 30 ? 'red' : '#22c55e'}"></div></div>
+                    <button onclick="sleepPlayer(${p.id})">SPÁNEČEK PRO HRÁČE</button>
+                </div>`;
+        });
+    }
+
+    function sleepPlayer(id) {
+        let p = db.players.find(x => x.id === id);
+        p.energy = 100;
+        save(); renderSleep();
+    }
+
+    function renderBackpack() {
+        const grid = document.getElementById('backpack');
+        grid.innerHTML = "";
+        for(let i=0; i<20; i++) {
+            let item = db.inventory[i];
+            grid.innerHTML += `<div class="inv-slot">${item ? '🥤' : ''} ${item ? `<span class="stack-count">${item.count}</span>` : ''}</div>`;
+        }
+    }
+
+    function buyItem(type) {
+        if(db.money < 500) return alert("Málo peněz!");
+        db.money -= 500;
+        let existing = db.inventory.find(i => i.type === type && i.count < 10);
+        if(existing) existing.count++;
+        else if(db.inventory.length < 20) db.inventory.push({type: type, count: 1});
+        save(); updateUI(); renderBackpack();
+    }
+
+    function buyPack(type) {
+        let cost = {bronze:1000, silver:5000, gold:10000}[type];
+        if(db.money < cost) return alert("Nesešmrdláš ani na balíček!");
+        db.money -= cost;
+        document.getElementById('pack-opener').style.display = 'flex';
+        document.getElementById('reveal-area').innerHTML = "<h2 style='color:white'>?</h2>";
+        
+        setTimeout(() => {
+            let lvl = type === 'gold' ? 25 : (type === 'silver' ? 15 : 7);
+            window.lastPulled = {name: "Hvězda", stat: Math.floor(Math.random()*lvl)+1, energy: 100, id: Date.now()};
+            playSound();
+            document.getElementById('reveal-area').innerHTML = `
+                <div class="reveal-card">
+                    <h1>${window.lastPulled.stat}</h1>
+                    <h3>${window.lastPulled.name}</h3>
+                </div>`;
+            document.getElementById('pack-close').style.display = "block";
+        }, 1500);
+    }
+
+    function closePack() {
+        db.players.push(window.lastPulled);
+        document.getElementById('pack-opener').style.display = 'none';
+        save(); updateUI();
+    }
+
+    let simDots = [];
+    function runMatch() {
+        if(Date.now() - db.lastMatch < 60000) return alert("Hala se uklízí!");
+        document.getElementById('sim-container').style.display = 'block';
+        let timeLeft = 30;
+        let score = {h:0, a:0};
+        
+        // Inicializace koleček (5 vs 5)
+        simDots = [];
+        for(let i=0; i<10; i++) {
+            simDots.push({
+                x: Math.random()*300, y: Math.random()*200, 
+                dx: (Math.random()-0.5)*4, dy: (Math.random()-0.5)*4,
+                team: i < 5 ? 'home' : 'away'
+            });
+        }
+
+        let interval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('sim-timer').innerText = timeLeft + "s";
+            
+            // Náhodné góly
+            if(Math.random() < 0.05) {
+                if(Math.random() > 0.5) score.h++; else score.a++;
+                document.getElementById('sc-h').innerText = score.h;
+                document.getElementById('sc-a').innerText = score.a;
+            }
+
+            if(timeLeft <= 0) {
+                clearInterval(interval);
+                finishMatch(score);
+            }
+        }, 1000);
+
+        // Kreslení koleček
+        let canvas = document.getElementById('sim-canvas');
+        let ctx = canvas.getContext('2d');
+        function draw() {
+            if(document.getElementById('sim-container').style.display === 'none') return;
+            ctx.clearRect(0,0,320,240);
+            simDots.forEach(d => {
+                d.x += d.dx; d.y += d.dy;
+                if(d.x<5 || d.x>315) d.dx *= -1;
+                if(d.y<5 || d.y>235) d.dy *= -1;
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, 6, 0, Math.PI*2);
+                ctx.fillStyle = d.team === 'home' ? 'yellow' : '#ccc';
+                ctx.fill();
+                ctx.strokeStyle = "white"; ctx.stroke();
+            });
+            requestAnimationFrame(draw);
+        }
+        draw();
+    }
+
+    function finishMatch(score) {
+        document.getElementById('sim-container').style.display = 'none';
+        db.lastMatch = Date.now();
+        
+        // Odečtení energie náhodně 1-10%
+        db.players.forEach(p => {
+            p.energy = Math.max(0, p.energy - (Math.floor(Math.random()*10)+1));
+        });
+
+        if(score.h > score.a) { db.money += 1000; alert("VÝHRA! +1000 🪙"); }
+        else { db.money += 200; alert("PROHRA. +200 🪙"); }
+        
+        save(); nav('match');
     }
 
     function updateUI() {
-        document.getElementById('money').innerText = db.money.toLocaleString();
-        let avg = Math.round(db.players.reduce((a,b)=>a+b.stat,0)/db.players.length) || 1;
-        document.getElementById('team-avg').innerText = avg;
+        document.getElementById('money').innerText = db.money;
         document.getElementById('player-count').innerText = db.players.length;
-        db.league.find(t=>t.isPlayer).strength = avg;
     }
 
-    function runMatch() {
-        if(Date.now() - db.lastMatch < 60000) return alert("Hala se připravuje!");
-        let opp = db.league.filter(t=>!t.isPlayer)[Math.floor(Math.random()*4)];
-        let score = {h:0, a:0};
-        document.getElementById('sb-home').innerText = db.name;
-        document.getElementById('sb-away').innerText = opp.name;
-        document.getElementById('sim-container').style.display = 'block';
-        document.getElementById('nav').style.display = 'none';
-        
-        let mTime = 0;
-        let si = setInterval(() => {
-            mTime++;
-            document.getElementById('sc-home').innerText = score.h;
-            document.getElementById('sc-away').innerText = score.a;
-            if(mTime % 5 === 0) {
-                if(Math.random() < 0.5) score.h++; else score.a++;
-            }
-            if(mTime >= 30) {
-                clearInterval(si);
-                document.getElementById('sim-container').style.display = 'none';
-                document.getElementById('nav').style.display = 'flex';
-                db.lastMatch = Date.now();
-                if(score.h > score.a) { db.money += 1000; db.league.find(t=>t.isPlayer).pts += 3; }
-                save(); nav('match');
-            }
-        }, 1000);
-    }
-
-    function renderLeague() { const b = document.getElementById('league-body'); b.innerHTML = ""; db.league.sort((x,y)=>y.pts-x.pts).forEach((t, i) => { b.innerHTML += `<tr><td>${i+1}.</td><td>${t.name}</td><td>${t.strength}</td><td>${t.pts}b</td></tr>`; }); }
-    function renderSleep() { const c = document.getElementById('sleep-list'); c.innerHTML = ""; db.players.forEach(p => { c.innerHTML += `<div class="card"><b>${p.name}</b> (Lvl ${p.stat}) <button onclick="db.players.find(x=>x.id===${p.id}).energy=100; save(); renderSleep();">DOPLNIT</button></div>`; }); }
-    function startTimers() { setInterval(() => { let wait = Math.ceil((60000-(Date.now()-db.lastMatch))/1000); document.getElementById('match-timer-text').innerText = wait>0 ? "Čekej: "+wait+"s" : "Můžeš hrát!"; }, 1000); }
-    function closePack() { if(db.players.length < 20) db.players.push(window.pulled); document.getElementById('pack-opener').style.display = 'none'; save(); updateUI(); }
+    function save() { localStorage.setItem('fb_final_v11', JSON.stringify(db)); }
     function resetGame() { localStorage.clear(); location.reload(); }
 
     window.onload = () => {
-        let s = localStorage.getItem('fb_mgr_sound_v10');
-        if(s) { db = JSON.parse(s); document.getElementById('scr-reg').classList.remove('active'); document.getElementById('top-ui').style.display='flex'; document.getElementById('nav').style.display='flex'; startTimers(); nav('match'); }
+        let s = localStorage.getItem('fb_final_v11');
+        if(s) { db = JSON.parse(s); document.getElementById('scr-reg').style.display='none'; document.getElementById('nav').style.display='flex'; document.getElementById('top-ui').style.display='flex'; nav('match'); }
     };
 </script>
 </body>
