@@ -2,177 +2,378 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager Pro 2026</title>
+    <title>Floorball Manager | Elite Edition</title>
     <style>
         :root {
-            --gold: #fbbf24; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.8);
+            --primary-gold: #fbbf24;
+            --secondary-gold: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --bg-main: #0a0e14;
+            --bg-accent: #161b22;
+            --glass: rgba(22, 27, 34, 0.8);
+            --border: rgba(251, 191, 36, 0.2);
         }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; text-align: center; overflow: hidden; }
-        .ui-bar { background: #000; padding: 10px; display: flex; justify-content: space-around; border-bottom: 2px solid var(--gold); font-size: 0.9em; }
-        .screen { display: none; padding: 15px; height: 85vh; overflow-y: auto; padding-bottom: 100px; box-sizing: border-box; }
-        .active { display: block; }
-        .card { background: var(--card-bg); border-radius: 12px; padding: 15px; margin: 10px auto; width: 92%; border: 1px solid rgba(255,255,255,0.1); }
-        button { background: linear-gradient(to bottom, var(--gold), #d97706); border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; color: black; }
-        button:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            background: radial-gradient(circle at top, #1e293b 0%, #0a0e14 100%);
+            background-attachment: fixed;
+            color: var(--text-main); 
+            margin: 0; 
+            text-align: center; 
+            overflow: hidden; 
+            touch-action: none; 
+        }
+
+        /* Jemná mřížka na pozadí arény */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        h1, h2, h3 { color: var(--primary-gold); text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+
+        .ui-bar { 
+            background: var(--glass); 
+            backdrop-filter: blur(10px);
+            padding: 15px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; justify-content: space-around; 
+            font-weight: bold; font-size: 0.9em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .screen { display: none; padding: 15px; height: 82vh; overflow-y: auto; padding-bottom: 100px; box-sizing: border-box; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { 
+            background: var(--glass); 
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--border); 
+            border-radius: 20px; 
+            padding: 18px; 
+            margin: 15px auto; 
+            width: 90%; max-width: 400px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-3px); }
+
+        button { 
+            background: linear-gradient(135deg, var(--secondary-gold), var(--primary-gold)); 
+            border: none; padding: 14px; border-radius: 12px; 
+            font-weight: 800; color: #000; text-transform: uppercase; 
+            width: 100%; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+        }
+        button:active { transform: scale(0.97); }
+        button:disabled { background: #334155; color: #64748b; box-shadow: none; cursor: not-allowed; }
+
+        input.setup-input { 
+            display: block; width: 88%; margin: 10px auto; padding: 14px; 
+            border-radius: 12px; border: 1px solid var(--border); 
+            background: rgba(0,0,0,0.4); color: white; text-align: center;
+        }
+
+        /* --- VYLEPŠENÁ ENERGIE & SPÁNEK --- */
+        .energy-container { background: rgba(255,255,255,0.05); height: 10px; border-radius: 10px; margin: 12px 0; overflow: hidden; position: relative; }
+        .energy-fill { 
+            background: linear-gradient(90deg, #f59e0b, #fbbf24); 
+            height: 100%; transition: width 0.5s; 
+            box-shadow: 0 0 10px rgba(251,191,36,0.5);
+        }
+        .energy-fill::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 50%; background: rgba(255,255,255,0.1); } /* Odlesk */
+
+        .timer-tag { font-size: 0.75em; font-weight: bold; padding: 5px 10px; border-radius: 8px; margin-top: 8px; display: inline-block; }
+        .sleeping { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); animation: pulseSleep 2s infinite; }
+        .cooldown { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        @keyframes pulseSleep { 0%, 100% { border-color: rgba(59, 130, 246, 0.2); } 50% { border-color: rgba(59, 130, 246, 0.5); } }
+
+        /* --- PRÉMIOVÉ BALÍČKY --- */
+        .pack { position: relative; cursor: pointer; overflow: hidden; }
+        .pack-icon { font-size: 2.5em; margin-bottom: 10px; display: block; }
+        .pack-bronze { border-left: 5px solid #d97706; }
+        .pack-silver { border-left: 5px solid #cbd5e1; }
+        .pack-gold { border-left: 5px solid var(--primary-gold); animation: pulseGold 2s infinite; }
+        @keyframes pulseGold { 0%, 100% { border-left-color: #fbbf24; } 50% { border-left-color: #fff; } }
+
+        /* --- INVENTÁŘ --- */
+        .inv-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 10px; }
+        .inv-slot { 
+            aspect-ratio: 1; background: rgba(255,255,255,0.03); 
+            border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 1.5em; position: relative; 
+        }
+        .inv-slot.filled { border: 1px solid var(--border); background: rgba(255,255,255,0.05); }
+        .stack-count { position: absolute; bottom: 3px; right: 5px; font-size: 0.5em; background: #000; padding: 1px 4px; border-radius: 4px; color: var(--primary-gold); }
+
+        /* --- TABULKA LIGY --- */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        th { color: var(--primary-gold); padding: 10px; border-bottom: 2px solid var(--border); text-align: left; }
+        td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); text-align: left; }
+        .my-team-row { background: rgba(251, 191, 36, 0.1); color: #fff; font-weight: bold; border-radius: 8px; }
+
+        /* --- NAVIGACE --- */
+        .nav-bar { 
+            position: fixed; bottom: 0; width: 100%; height: 75px; 
+            background: var(--glass); backdrop-filter: blur(15px);
+            display: flex; border-top: 1px solid var(--border); z-index: 100; 
+        }
+        .nav-item { flex: 1; display: flex; justify-content: center; align-items: center; font-size: 24px; color: var(--text-muted); transition: 0.3s; }
+        .nav-item.selected { color: var(--primary-gold); font-size: 30px; text-shadow: 0 0 15px var(--primary-gold); }
+
+        /* --- SIMULACE --- */
+        #sim-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); z-index: 1000; padding-top: 20px; }
+        .scoreboard { 
+            background: #111; border: 2px solid var(--primary-gold); 
+            display: flex; justify-content: center; align-items: center; 
+            width: 300px; margin: 0 auto 10px; border-radius: 12px; 
+            padding: 8px; font-family: 'Courier New', monospace;
+            box-shadow: 0 0 20px rgba(251,191,36,0.3);
+        }
+        .score-team { flex: 1; color: white; font-weight: bold; font-size: 0.8em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .score-box { background: #000; color: var(--primary-gold); padding: 5px 15px; font-size: 1.5em; border-radius: 8px; margin: 0 15px; border: 1px solid #333; }
+        #sim-canvas { background: #050505; border: 2px solid var(--primary-gold); border-radius: 15px; box-shadow: 0 0 30px rgba(251, 191, 36, 0.2); }
+        #half-time-overlay { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--primary-gold); color: #000; padding: 10px 25px; font-weight: bold; border-radius: 8px; z-index: 1100; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* --- OTEVÍRÁNÍ BALÍČKŮ (Slow Reveal) --- */
+        #pack-opener { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a1a1a, #000); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
+        .card-silhouette { width: 220px; height: 310px; background: #111; border: 5px solid transparent; border-radius: 20px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.05); font-size: 5em; font-weight: bold; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .glow-bronze { border-color: #d97706; animation: glowB 1.5s infinite; }
+        .glow-silver { border-color: #cbd5e1; animation: glowS 1.5s infinite; }
+        .glow-gold { border-color: #fbbf24; animation: glowG 1.5s infinite; }
+        @keyframes glowG { 0%, 100% { box-shadow: 0 0 30px rgba(251,191,36,0.5); } 50% { box-shadow: 0 0 60px rgba(251,191,36,0.8); } }
         
-        /* Tabulka */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { border-bottom: 2px solid var(--gold); padding: 5px; }
-        td { padding: 8px; border-bottom: 1px solid #334155; }
-
-        /* Simulace */
-        .scoreboard { background: #000; border: 2px solid var(--gold); border-radius: 8px; display: flex; justify-content: center; align-items: center; width: 280px; margin: 0 auto 10px; padding: 5px; }
-        .sc-box { font-size: 2em; font-family: monospace; color: var(--gold); margin: 0 15px; }
-        #sim-canvas { background: #064e3b; border: 2px solid #fff; border-radius: 10px; }
-        
-        /* Pack Animace */
-        #pack-opener { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5000; flex-direction: column; align-items: center; justify-content: center; }
-        .reveal-card { width: 200px; height: 280px; background: #fff; border: 8px solid var(--gold); border-radius: 15px; color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; animation: flip 0.6s; }
-        @keyframes flip { from { transform: rotateY(90deg); } to { transform: rotateY(0); } }
-
-        /* Spánek */
-        .sleeping { opacity: 0.5; filter: grayscale(1); }
-        .energy-bar-bg { background: #222; height: 8px; border-radius: 4px; margin: 5px 0; }
-        .energy-fill { height: 100%; background: #22c55e; border-radius: 4px; transition: width 0.3s; }
-
-        .nav { position: fixed; bottom: 0; width: 100%; height: 65px; background: #000; display: flex; border-top: 1px solid #333; }
-        .nav-item { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .reveal-card { 
+            width: 220px; height: 310px; background: #fff; 
+            border: 10px solid var(--primary-gold); border-radius: 20px; 
+            color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            animation: flipCard 0.8s ease-out; box-shadow: 0 0 50px var(--primary-gold); 
+        }
+        @keyframes flipCard { from { transform: rotateY(90deg) scale(0.5); opacity: 0; } to { transform: rotateY(0) scale(1); opacity: 1; } }
     </style>
 </head>
-<body>
+<body id="main-body">
 
 <div id="top-ui" style="display:none" class="ui-bar">
-    <span>💰 <span id="money">0</span></span>
-    <span>📊 AVG: <span id="avg">0</span></span>
-    <span>👥 <span id="p-count">0</span></span>
+    <span>💰 <span id="money">10,000</span></span>
+    <span>📊 AVG: <span id="team-avg">1</span></span>
+    <span>👥 <span id="player-count">6</span></span>
 </div>
 
 <div id="scr-reg" class="screen active">
-    <h1>FLOORBALL PRO 26</h1>
+    <h1>FLORBAL MANAŽER</h1>
+    <p style="color:var(--text-muted)">Elite Edition 2026</p>
     <div class="card">
-        <input type="text" id="mgr-name" placeholder="NÁZEV KLUBU" style="padding:10px; width:80%; margin-bottom:10px;">
+        <input type="text" id="mgr-name" class="setup-input" placeholder="NÁZEV TVÉHO KLUBU">
         <button onclick="createTeam()">ZALOŽIT KLUB</button>
     </div>
 </div>
 
+<div id="scr-shop" class="screen">
+    <h2>OBCHOD S BALÍČKY 📦</h2>
+    <div class="card pack pack-bronze" onclick="buyPack('bronze')">
+        <span class="pack-icon">🥉</span>
+        <h3>Bronzový Balíček</h3>
+        <p>Hráči Lvl 1-6</p>
+        <b>1,000 🪙</b>
+    </div>
+    <div class="card pack pack-silver" onclick="buyPack('silver')">
+        <span class="pack-icon">🥈</span>
+        <h3>Stříbrný Balíček</h3>
+        <p>Hráči Lvl 7-15</p>
+        <b>5,000 🪙</b>
+    </div>
+    <div class="card pack pack-gold" onclick="buyPack('gold')">
+        <span class="pack-icon">🥇</span>
+        <h3>Zlatý Balíček</h3>
+        <p>Hráči Lvl 16-35</p>
+        <b>10,000 🪙</b>
+    </div>
+</div>
+
 <div id="scr-match" class="screen">
-    <h3>LIGOVÁ TABULKA</h3>
-    <div class="card">
+    <h2>LIGOVÁ TABULKA 🏆</h2>
+    <div class="card" style="width:95%; padding: 10px;">
         <table id="league-table">
-            <thead><tr><th>TÝM</th><th>LVL</th><th>BODY</th></tr></thead>
+            <thead><tr><th>#</th><th>TÝM</th><th>LVL</th><th>PTS</th></tr></thead>
             <tbody id="league-body"></tbody>
         </table>
     </div>
     <div class="card">
-        <button id="btn-match" onclick="runMatch()">HRÁT ZÁPAS (30s)</button>
-        <p id="match-req" style="font-size: 0.8em; color: #fb7185;"></p>
+        <button id="match-btn" onclick="runMatch()">HRÁT LIGOVÝ ZÁPAS</button>
+        <p id="match-timer-text" style="font-size:0.8em; color:var(--text-muted); margin-top: 10px;"></p>
     </div>
 </div>
 
-<div id="scr-shop" class="screen">
-    <h2>OBCHOD 📦</h2>
-    <div class="card" onclick="buyPack('bronze')" style="border-left: 5px solid #78350f;">BRONZ (1 000 🪙)</div>
-    <div class="card" onclick="buyPack('silver')" style="border-left: 5px solid #cbd5e1;">STŘÍBRNÝ (5 000 🪙)</div>
-    <div class="card" onclick="buyPack('gold')" style="border-left: 5px solid var(--gold);">ZLATÝ (10 000 🪙)</div>
-</div>
-
 <div id="scr-sleep" class="screen">
-    <h2>KABINA 🛌</h2>
+    <h2>KABINA & REGENERACE 🛌</h2>
+    <p id="use-msg" style="display:none; color: var(--primary-gold);">KLIKNI NA HRÁČE PRO DOPLNĚNÍ ENERGIE</p>
     <div id="sleep-list"></div>
 </div>
 
 <div id="scr-profile" class="screen">
-    <h2>BATOH 🎒</h2>
-    <div id="backpack" style="display:grid; grid-template-columns: repeat(5,1fr); gap:5px;" class="card"></div>
-    <button onclick="resetGame()" style="background:red; color:white;">RESET HRY</button>
-</div>
-
-<div id="sim-screen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:4000;">
-    <div class="scoreboard">
-        <div id="h-name">DOM</div>
-        <div class="sc-box"><span id="s-h">0</span>:<span id="s-a">0</span></div>
-        <div id="a-name">HOS</div>
+    <h2 id="prof-name">PROFIL MANAŽERA👤</h2>
+    <div class="card">
+        <h3>🎒 BATOH (Max 10x stack)</h3>
+        <div id="backpack" class="inv-grid"></div>
     </div>
-    <h1 id="timer">30</h1>
-    <canvas id="sim-canvas" width="300" height="200"></canvas>
-    <div id="match-msg" class="card" style="color:var(--gold); font-style:italic; min-height:40px;">Zápas začíná!</div>
+    <button style="background:#ef4444; color:white; margin-top:20px;" onclick="resetGame()">RESET KARIÉRY</button>
 </div>
 
 <div id="pack-opener">
-    <div id="p-reveal"></div>
-    <button id="p-close" style="display:none; width:200px; margin-top:20px;" onclick="closePack()">PŘIDAT DO TÝMU</button>
+    <div id="reveal-container">
+        </div>
+    <button id="pack-btn" style="width:200px; margin-top:25px; display:none;" onclick="closePack()">PŘIDAT DO TÝMU</button>
 </div>
 
-<div id="nav" class="nav" style="display:none">
-    <div class="nav-item" onclick="nav('sleep')">🛌</div>
-    <div class="nav-item" onclick="nav('match')">🥅</div>
-    <div class="nav-item" onclick="nav('shop')">📦</div>
-    <div class="nav-item" onclick="nav('profile')">🎒</div>
+<div id="sim-container" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:3000;">
+    <div class="scoreboard">
+        <div class="score-team" id="sb-home">Můj Tým</div>
+        <div class="score-box"><span id="sc-h">0</span>:<span id="sc-a">0</span></div>
+        <div class="score-team" id="sb-away">Hosté</div>
+    </div>
+    <h1 id="sim-timer" style="margin: 5px; font-family: monospace;">30s</h1>
+    <div style="position:relative; display:inline-block;">
+        <canvas id="sim-canvas" width="320" height="240"></canvas>
+        <div id="half-time-overlay">POLOČAS</div>
+    </div>
+    <div id="commentary" class="card" style="margin-top:20px; color:var(--primary-gold); min-height:40px; font-style:italic;">Zápas začíná...</div>
+</div>
+
+<div id="nav" class="nav-bar" style="display:none">
+    <div class="nav-item" id="n-sleep" onclick="nav('sleep')">🛏️</div>
+    <div class="nav-item selected" id="n-match" onclick="nav('match')">🥅</div>
+    <div class="nav-item" id="n-shop" onclick="nav('shop')">📦</div>
+    <div class="nav-item" id="n-profile" onclick="nav('profile')">👤</div>
 </div>
 
 <script>
+    // --- PŮVODNÍ LOGIKA ZŮSTÁVÁ STEJNÁ ---
     let db = {
-        money: 10000, players: [], lastMatch: 0,
-        league: [{n:"FBC Draci", l:10, p:0}, {n:"SK Kladiva", l:20, p:0}, {n:"Tatran Lhota", l:35, p:0}]
+        name: "", money: 10000, lastMatch: 0, players: [], inventory: [],
+        league: [
+            { name: "FK Kuličky", strength: 4, pts: 0 }, { name: "SK Beton", strength: 12, pts: 0 },
+            { name: "HC Prach", strength: 22, pts: 0 }, { name: "Lvi z Lhoty", strength: 35, pts: 0 },
+            { name: "Můj Tým", strength: 0, pts: 0, isPlayer: true }
+        ]
     };
 
-    const jokes = ["Míček se zasekl v brankářově helmě!", "Rozhodčí pije energeťák místo pískání.", "Diváci dělají mexickou vlnu!", "Trenér soupeře si zapomněl vzít boty.", "Neskutečná střela, málem to prorvalo síť!"];
+    const jokes = ["Míček se zasekl v mantinelu!", "Rozhodčí zapomněl pískat!", "Diváci skandují tvé jméno!", "Soupeřův gólman zaspal!", "Úžasná individuální akce!"];
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    function playPackSound() {
+    function playSound(freq, duration) {
+        if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
         const g = audioCtx.createGain();
-        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         osc.connect(g); g.connect(audioCtx.destination);
-        osc.frequency.setValueAtTime(200 + Math.random()*600, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
     }
+
+    function save() { localStorage.setItem('fb_mgr_elite_v1', JSON.stringify(db)); }
 
     function nav(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('selected'));
         document.getElementById('scr-'+id).classList.add('active');
+        document.getElementById('n-'+id).classList.add('selected');
+        updateUI();
         if(id==='sleep') renderSleep();
         if(id==='match') renderLeague();
         if(id==='profile') renderBackpack();
-        updateUI();
     }
 
     function createTeam() {
-        db.teamName = document.getElementById('mgr-name').value || "Můj Tým";
-        // Hráči začínají s LVL 1 (aby balíčky měly smysl)
+        db.name = document.getElementById('mgr-name').value || "Můj Tým";
+        // Hráči LVL 1
         for(let i=0; i<6; i++) db.players.push({name: "Hráč "+(i+1), stat: 1, energy: 100, id: Date.now()+i, sleepUntil: 0, lastSleep: 0});
-        db.league.push({n: db.teamName, l: 1, p: 0, isPlayer: true});
-        save(); nav('match');
-        document.getElementById('nav').style.display='flex'; document.getElementById('top-ui').style.display='flex';
+        db.league.find(t => t.isPlayer).name = db.name;
+        document.getElementById('scr-reg').classList.remove('active');
+        document.getElementById('nav').style.display = 'flex';
+        document.getElementById('top-ui').style.display = 'flex';
+        save(); startTimers(); nav('match');
     }
 
     function updateUI() {
         document.getElementById('money').innerText = db.money.toLocaleString();
         let total = db.players.reduce((a,b)=>a+b.stat, 0);
-        let avg = (total / db.players.length).toFixed(1);
-        document.getElementById('avg').innerText = avg;
-        document.getElementById('p-count').innerText = db.players.length;
-        
-        let activePlayers = db.players.filter(p => p.sleepUntil < Date.now()).length;
-        document.getElementById('match-req').innerText = activePlayers < 6 ? `Potřebuješ 6 nespících hráčů! (Máš ${activePlayers})` : "";
-        document.getElementById('btn-match').disabled = activePlayers < 6;
+        let avg = db.players.length > 0 ? (total / db.players.length).toFixed(1) : 1;
+        document.getElementById('team-avg').innerText = avg;
+        document.getElementById('player-count').innerText = db.players.length;
+        db.league.find(t=>t.isPlayer).strength = Math.round(avg);
     }
 
+    function buyPack(type) {
+        let cost = {bronze:1000, silver:5000, gold:10000}[type];
+        if(db.money < cost) return alert("Nedostatek financí na Elite balíček!");
+        db.money -= cost;
+        updateUI();
+
+        document.getElementById('pack-opener').style.display = 'flex';
+        document.getElementById('pack-btn').style.display = 'none';
+        
+        let lvl = type==='gold' ? Math.floor(Math.random()*20)+16 : (type==='silver' ? Math.floor(Math.random()*9)+7 : Math.floor(Math.random()*6)+1);
+        let surnames = ["Novák", "Krejčí", "Pastrňák", "Hertl", "Vokoun", "Špaček", "Jágr"];
+        let pName = surnames[Math.floor(Math.random()*surnames.length)];
+        window.lastP = {name: pName, stat: lvl, energy: 100, id: Date.now(), sleepUntil:0, lastSleep:0};
+
+        let container = document.getElementById('reveal-container');
+        // FÁZE 1: Záře
+        container.innerHTML = `<div class="card-silhouette glow-${type}">?</div>`;
+        if(type==='gold') playSound(100, 0.5);
+
+        // FÁZE 2: První písmenko (Po 1.2s)
+        setTimeout(() => {
+            playSound(300, 0.1);
+            container.innerHTML = `<div class="card-silhouette glow-${type}"><div style="color:white; text-shadow:0 0 10px #fff;">${pName[0]}...</div></div>`;
+        }, 1200);
+
+        // FÁZE 3: Celá karta (Po dalších 1.3s - celkem 2.5s)
+        setTimeout(() => {
+            playSound(600, 0.4);
+            container.innerHTML = `
+                <div class="reveal-card">
+                    <h2 style="margin:0; color:#444; font-size:1em;">ELITE PLAYER</h2>
+                    <h1 style="font-size:5.5em; margin:10px 0;">${lvl}</h1>
+                    <h2 style="margin:0; letter-spacing:2px; font-weight:900;">${pName.toUpperCase()}</h2>
+                </div>
+            `;
+            document.getElementById('pack-btn').style.display = 'block';
+        }, 2500);
+    }
+
+    function closePack() {
+        db.players.push(window.lastP);
+        document.getElementById('pack-opener').style.display = 'none';
+        save(); updateUI();
+    }
+
+    // --- SPÁNEK ---
     function renderSleep() {
         const list = document.getElementById('sleep-list');
         list.innerHTML = "";
         db.players.forEach(p => {
             let isSleeping = p.sleepUntil > Date.now();
-            let canSleep = Date.now() - p.lastSleep > 600000; // 10 minut
-            let cooldown = Math.ceil((600000 - (Date.now() - p.lastSleep))/1000);
+            let cooldownWait = 600000 - (Date.now() - p.lastSleep);
+            let canSleep = cooldownWait <= 0;
             
             list.innerHTML += `
                 <div class="card ${isSleeping ? 'sleeping' : ''}">
                     <b>${p.name}</b> (Lvl ${p.stat}) | ${p.energy}%
-                    <div class="energy-bar-bg"><div class="energy-fill" style="width:${p.energy}%"></div></div>
-                    <button ${isSleeping || !canSleep ? 'disabled' : ''} onclick="startSleep(${p.id})">
-                        ${isSleeping ? 'SPÍ...' : (canSleep ? 'SPÁNEČEK PRO HRÁČE' : 'COOLDOWN '+cooldown+'s')}
+                    <div class="energy-container"><div class="energy-fill" style="width:${p.energy}%; background:${p.energy < 30 ? '#ef4444' : '#22c55e'}"></div></div>
+                    ${isSleeping ? '<span class="timer-tag sleeping">💤 Odpočívá</span>' : (!canSleep ? `<span class="timer-tag cooldown">⏳ Cooldown ${Math.ceil(cooldownWait/60000)}m</span>` : '')}
+                    <button style="margin-top:10px;" ${isSleeping || !canSleep ? 'disabled' : ''} onclick="startSleep(${p.id})">
+                        ${isSleeping ? 'Čekej...' : 'SPÁNEČEK PRO HRÁČE'}
                     </button>
                 </div>`;
         });
@@ -180,110 +381,107 @@
 
     function startSleep(id) {
         let p = db.players.find(x => x.id === id);
-        p.sleepUntil = Date.now() + 60000; // 1 minuta spánku
+        p.sleepUntil = Date.now() + 60000; // 1 min spánku
         p.lastSleep = Date.now();
         p.energy = 100;
-        save(); renderSleep();
+        save(); renderSleep(); nav('sleep'); // Refresh
     }
 
-    function buyPack(type) {
-        let cost = {bronze:1000, silver:5000, gold:10000}[type];
-        if(db.money < cost) return alert("Peníze nejsou!");
-        db.money -= cost;
-        
-        document.getElementById('pack-opener').style.display = 'flex';
-        document.getElementById('p-close').style.display = 'none';
-        
-        let lvl = type==='gold' ? Math.floor(Math.random()*20)+16 : (type==='silver' ? Math.floor(Math.random()*10)+6 : Math.floor(Math.random()*5)+1);
-        let names = ["Pastrňák", "Jágr", "Hertl", "Voráček", "Slanina", "Vokoun", "Eliáš", "Palát"];
-        let pName = names[Math.floor(Math.random()*names.length)];
-        window.lastP = {name: pName, stat: lvl, energy: 100, id: Date.now(), sleepUntil:0, lastSleep:0};
-
-        let area = document.getElementById('p-reveal');
-        area.innerHTML = `<div style="font-size:3em; color:var(--gold); border:2px solid; padding:40px; border-radius:15px; animation: pulse 1s infinite;">?</div>`;
-
-        setTimeout(() => { area.innerHTML = `<h1 style="font-size:4em; color:white;">${pName[0]}...</h1>`; }, 1200);
-        setTimeout(() => {
-            playPackSound();
-            area.innerHTML = `<div class="reveal-card"><h2>${window.lastP.stat}</h2><h1>${window.lastP.name}</h1></div>`;
-            document.getElementById('p-close').style.display = 'block';
-        }, 2500);
-    }
-
-    function closePack() {
-        db.players.push(window.lastP);
-        document.getElementById('pack-opener').style.display='none';
-        save(); updateUI();
-    }
-
+    // --- ZÁPAS ---
     function runMatch() {
-        document.getElementById('sim-screen').style.display = 'block';
-        let time = 30;
+        let activePlayers = db.players.filter(p => p.sleepUntil < Date.now()).length;
+        if(activePlayers < 6) return alert("Do sestavy potřebuješ 6 připravených hráčů! Ostatní spí.");
+        
+        let opp = db.league.filter(t=>!t.isPlayer)[Math.floor(Math.random()*3)];
+        document.getElementById('sb-home').innerText = db.name.toUpperCase();
+        document.getElementById('sb-away').innerText = opp.name.toUpperCase();
+        document.getElementById('sc-h').innerText = "0";
+        document.getElementById('sc-a').innerText = "0";
+        
+        document.getElementById('sim-container').style.display = 'block';
+        document.getElementById('nav').style.display = 'none';
+        
+        let timeLeft = 30;
         let score = {h:0, a:0};
         let dots = [];
-        for(let i=0; i<10; i++) dots.push({x:Math.random()*280, y:Math.random()*180, dx:(Math.random()-0.5)*6, dy:(Math.random()-0.5)*6, c: i<5?'#fbbf24':'#fff'});
-        
+        for(let i=0; i<10; i++) {
+            dots.push({ x: Math.random()*280+10, y: Math.random()*200+20, dx: (Math.random()-0.5)*10, dy: (Math.random()-0.5)*10, c: i<5?'#fbbf24':'#aaa'});
+        }
+
         let interval = setInterval(() => {
-            time--;
-            document.getElementById('timer').innerText = time;
-            if(Math.random() < 0.08) {
-                if(Math.random() > 0.5) score.h++; else score.a++;
-                document.getElementById('s-h').innerText = score.h;
-                document.getElementById('s-a').innerText = score.a;
+            timeLeft--;
+            document.getElementById('sim-timer').innerText = timeLeft + "s";
+            if(Math.random() < 0.1) {
+                if(Math.random() < (db.league.find(t=>t.isPlayer).strength / 60)) { score.h++; playSound(800, 0.1); } 
+                else { score.a++; playSound(200, 0.1); }
+                document.getElementById('sc-h').innerText = score.h;
+                document.getElementById('sc-a').innerText = score.a;
             }
-            if(time % 6 === 0) document.getElementById('match-msg').innerText = jokes[Math.floor(Math.random()*jokes.length)];
-            if(time <= 0) {
+            if(timeLeft % 6 === 0) document.getElementById('commentary').innerText = jokes[Math.floor(Math.random()*jokes.length)];
+            
+            if(timeLeft === 15) {
+                document.getElementById('half-time-overlay').style.display = 'block';
+                setTimeout(()=> document.getElementById('half-time-overlay').style.display = 'none', 1000);
+            }
+
+            if(timeLeft <= 0) {
                 clearInterval(interval);
-                finishMatch(score);
+                finishMatch(score, opp);
             }
         }, 1000);
 
         let canvas = document.getElementById('sim-canvas');
         let ctx = canvas.getContext('2d');
         function anim() {
-            if(document.getElementById('sim-screen').style.display==='none') return;
-            ctx.clearRect(0,0,300,200);
+            if(document.getElementById('sim-container').style.display==='none') return;
+            ctx.clearRect(0,0,320,240);
             dots.forEach(d => {
                 d.x+=d.dx; d.y+=d.dy;
-                if(d.x<5 || d.x>295) d.dx*=-1; if(d.y<5 || d.y>195) d.dy*=-1;
-                ctx.beginPath(); ctx.arc(d.x, d.y, 5, 0, 7); ctx.fillStyle=d.c; ctx.fill();
+                if(d.x<5 || d.x>315) d.dx*=-1; if(d.y<5 || d.y>235) d.dy*=-1;
+                ctx.beginPath(); ctx.arc(d.x, d.y, 6, 0, 7); ctx.fillStyle=d.c; ctx.fill();
+                ctx.strokeStyle = "#fff"; ctx.stroke();
             });
             requestAnimationFrame(anim);
         }
         anim();
     }
 
-    function finishMatch(s) {
-        document.getElementById('sim-screen').style.display='none';
+    function finishMatch(s, opp) {
+        document.getElementById('sim-container').style.display='none';
+        document.getElementById('nav').style.display='flex';
+        // Unava nahodna 1-10% jen nespícím
         db.players.filter(p => p.sleepUntil < Date.now()).forEach(p => {
             p.energy = Math.max(0, p.energy - (Math.floor(Math.random()*10)+1));
         });
-        if(s.h > s.a) { db.money += 1000; alert("VÝHRA! +1000 🪙"); }
-        else { db.money += 200; alert("PROHRA. +200 🪙"); }
+        if(s.h > s.a) { 
+            db.money += 1000; db.league.find(t=>t.isPlayer).pts += 3;
+            playSound(1000, 0.5); alert("VÍTĚZSTVÍ! Tým získává +1000 🪙"); 
+        } else {
+            db.money += 200; alert("PROHRA. Aspoň 200 🪙 za lístky."); 
+        }
+        opp.p += (Math.random()>0.5 ? 3 : 1); // Soupeř získá body
         save(); nav('match');
     }
 
     function renderLeague() {
         const body = document.getElementById('league-body');
         body.innerHTML = "";
-        db.league.sort((a,b)=>b.p - a.p).forEach(t => {
-            body.innerHTML += `<tr><td>${t.n}</td><td>${t.l}</td><td>${t.p}</td></tr>`;
+        db.league.sort((a,b)=>b.p - a.p).forEach((t,i) => {
+            body.innerHTML += `<tr class="${t.isPlayer ? 'my-team-row' : ''}"><td>${i+1}.</td><td>${t.name}</td><td>${t.strength}</td><td>${t.p}b</td></tr>`;
         });
     }
 
     function renderBackpack() {
-        const bp = document.getElementById('backpack');
-        bp.innerHTML = "";
-        for(let i=0; i<20; i++) bp.innerHTML += `<div style="height:50px; background:rgba(255,255,255,0.05); border-radius:5px;"></div>`;
+        const bp = document.getElementById('backpack'); bp.innerHTML = "";
+        for(let i=0; i<20; i++) bp.innerHTML += `<div class="inv-slot"></div>`;
     }
 
-    function save() { localStorage.setItem('fb_pro_v12', JSON.stringify(db)); }
-    function resetGame() { localStorage.clear(); location.reload(); }
+    function startTimers() { setInterval(() => { if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep(); }, 1000); }
+    function resetGame() { if(confirm("Opravdu smazat celou Elite kariéru?")) { localStorage.clear(); location.reload(); } }
 
     window.onload = () => {
-        let s = localStorage.getItem('fb_pro_v12');
-        if(s) { db = JSON.parse(s); document.getElementById('scr-reg').style.display='none'; document.getElementById('nav').style.display='flex'; document.getElementById('top-ui').style.display='flex'; nav('match'); }
-        setInterval(() => { if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep(); }, 1000);
+        let s = localStorage.getItem('fb_mgr_elite_v1');
+        if(s) { db = JSON.parse(s); document.getElementById('scr-reg').style.display='none'; document.getElementById('nav').style.display='flex'; document.getElementById('top-ui').style.display='flex'; startTimers(); nav('match'); }
     };
 </script>
 </body>
