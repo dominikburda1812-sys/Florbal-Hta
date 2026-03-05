@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Elite Manager</title>
+    <title>Floorball Elite Manager | Pro Edition</title>
     <style>
         :root {
             --accent: #fbbf24;
@@ -36,7 +36,8 @@
 
         /* --- SCREENS --- */
         .screen { display: none; height: 100vh; padding: 20px; box-sizing: border-box; overflow-y: auto; padding-bottom: 120px; }
-        .active { display: block; }
+        .active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .header { font-size: 1.4rem; font-weight: 900; text-transform: uppercase; margin-bottom: 20px; border-left: 4px solid var(--accent); padding-left: 15px; }
 
@@ -53,21 +54,28 @@
             color: #000; border: none; padding: 14px; border-radius: 12px;
             font-weight: 800; width: 100%; cursor: pointer; text-transform: uppercase;
         }
-        button:disabled { background: #222; color: #555; }
+        button:disabled { background: #222; color: #555; cursor: not-allowed; }
 
-        /* --- MINI MATCH ANIMACE --- */
+        /* --- MINI MATCH ANIMACE (Studio Look) --- */
         .match-box {
-            width: 100%; height: 160px; background: #022c22;
-            border-radius: 12px; border: 2px solid #059669;
+            width: 100%; height: 180px; background: radial-gradient(circle, #064e3b 0%, #022c22 100%);
+            border-radius: 16px; border: 2px solid #059669;
             position: relative; margin-bottom: 15px; display: none;
-            overflow: hidden;
+            overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #match-canvas { width: 100%; height: 100%; }
+        
+        .match-scoreboard {
+            position: absolute; top: 0; left: 0; width: 100%;
+            background: rgba(0,0,0,0.6); display: flex; justify-content: center;
+            padding: 5px 0; font-family: monospace; font-size: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
         /* --- NAVIGACE --- */
         .bottom-nav {
             position: fixed; bottom: 0; width: 100%; height: 75px;
             background: var(--glass); border-top: 1px solid rgba(255,255,255,0.1);
-            display: flex; justify-content: space-around; align-items: center;
+            display: flex; justify-content: space-around; align-items: center; z-index: 2000;
         }
         .nav-item { font-size: 1.6rem; opacity: 0.4; transition: 0.2s; cursor: pointer; }
         .nav-item.active { opacity: 1; color: var(--accent); transform: translateY(-3px); }
@@ -82,6 +90,7 @@
             width: 220px; height: 300px; background: #fff; border: 8px solid var(--accent);
             border-radius: 20px; color: #000; display: flex; flex-direction: column;
             align-items: center; justify-content: center; font-weight: 900;
+            box-shadow: 0 0 30px var(--accent);
         }
 
         input { width: 100%; padding: 12px; background: #111; border: 1px solid #333; color: #fff; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
@@ -90,43 +99,48 @@
 <body>
 
     <div id="top-ui" class="top-nav" style="display:none">
-        <div align="center">PENÍZE <span class="stat-val" id="m-money">0</span></div>
+        <div align="center">KONTO <span class="stat-val" id="m-money">0</span></div>
         <div align="center">AVG <span class="stat-val" id="m-avg">0</span></div>
-        <div align="center">HRÁČI <span class="stat-val" id="m-count">0</span></div>
+        <div align="center">KÁDR <span class="stat-val" id="m-count">0</span></div>
     </div>
 
     <div id="scr-reg" class="screen active">
-        <div class="header">Registrace Klubu</div>
+        <div class="header">Nový Klub</div>
         <div class="card">
             <input type="text" id="reg-team" placeholder="Název týmu">
-            <p style="font-size:0.8rem; color:gray;">Jména tvých 6 hvězd:</p>
-            <div id="reg-players">
-                <input type="text" class="p-name" value="Hráč 1">
-                <input type="text" class="p-name" value="Hráč 2">
-                <input type="text" class="p-name" value="Hráč 3">
-                <input type="text" class="p-name" value="Hráč 4">
-                <input type="text" class="p-name" value="Hráč 5">
-                <input type="text" class="p-name" value="Hráč 6">
+            <p style="font-size:0.8rem; color:gray; margin: 15px 0 5px 0;">Sestavte prvních 6 hráčů:</p>
+            <div id="reg-players" style="display: flex; flex-wrap: wrap; justify-content: space-between;">
+                <input type="text" class="p-name" value="Hráč 1" style="width: 48%;">
+                <input type="text" class="p-name" value="Hráč 2" style="width: 48%;">
+                <input type="text" class="p-name" value="Hráč 3" style="width: 48%;">
+                <input type="text" class="p-name" value="Hráč 4" style="width: 48%;">
+                <input type="text" class="p-name" value="Hráč 5" style="width: 48%;">
+                <input type="text" class="p-name" value="Hráč 6" style="width: 48%;">
             </div>
-            <button onclick="firstStart()">Založit tým</button>
+            <button onclick="firstStart()" style="margin-top: 10px;">Založit a začít</button>
         </div>
     </div>
 
     <div id="scr-match" class="screen">
-        <div class="header">Zápasy</div>
+        <div class="header">Match Day</div>
+        
         <div id="match-anim" class="match-box">
-            <canvas id="match-canvas"></canvas>
-            <div style="position:absolute; top:5px; width:100%; text-align:center; font-weight:bold;">
-                <span id="score-h">0</span> : <span id="score-a">0</span>
+            <div class="match-scoreboard">
+                <span id="score-h" style="color:var(--accent)">0</span>
+                <span style="margin: 0 10px; color: gray;">:</span>
+                <span id="score-a" style="color: white">0</span>
             </div>
+            <canvas id="match-canvas"></canvas>
         </div>
+
         <div class="card">
-            <div id="match-status" style="margin-bottom:10px; font-weight:bold;">PŘIPRAVEN</div>
-            <button id="btn-match" onclick="playMatch()">Hrát zápas (30s)</button>
+            <div id="match-status" style="margin-bottom:10px; font-weight:bold; font-size: 0.9rem;">PŘIPRAVEN K VÝKOPOU</div>
+            <button id="btn-match" onclick="playMatch()">Vstoupit na palubovku</button>
         </div>
+
         <div class="card">
-            <table style="width:100%; font-size:0.9rem;">
-                <thead><tr style="color:var(--accent); text-align:left;"><th>Tým</th><th>AVG</th><th>Body</th></tr></thead>
+            <table style="width:100%; font-size:0.85rem; border-collapse: collapse;">
+                <thead><tr style="color:var(--accent); text-align:left; border-bottom: 1px solid #333;"><th style="padding-bottom: 8px;">Tým</th><th>SÍLA</th><th>BODY</th></tr></thead>
                 <tbody id="league-table"></tbody>
             </table>
         </div>
@@ -138,14 +152,29 @@
     </div>
 
     <div id="scr-shop" class="screen">
-        <div class="header">Obchod</div>
-        <div class="card" onclick="buyPack('bronze')"><h3>BRONZ</h3><p>Lvl 1-9 | 5 000 🪙</p></div>
-        <div class="card" onclick="buyPack('silver')"><h3>STŘÍBRO</h3><p>Lvl 10-19 | 10 000 🪙</p></div>
-        <div class="card" onclick="buyPack('gold')"><h3>GOLD</h3><p>Lvl 20-29 | 15 000 🪙</p></div>
+        <div class="header">Draftování</div>
+        <div class="card" onclick="buyPack('bronze')">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><b>BRONZ</b><br><small style="color:gray;">Lvl 1-9</small></div>
+                <div style="color:var(--accent)">5 000 🪙</div>
+            </div>
+        </div>
+        <div class="card" onclick="buyPack('silver')">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><b>STŘÍBRO</b><br><small style="color:gray;">Lvl 10-19</small></div>
+                <div style="color:var(--accent)">10 000 🪙</div>
+            </div>
+        </div>
+        <div class="card" onclick="buyPack('gold')">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><b>GOLD ELITE</b><br><small style="color:gray;">Lvl 20-29</small></div>
+                <div style="color:var(--accent)">15 000 🪙</div>
+            </div>
+        </div>
     </div>
 
     <div id="scr-bag" class="screen">
-        <div class="header">Inventář</div>
+        <div class="header">Vybavení</div>
         <div id="bag-grid" style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;"></div>
     </div>
 
@@ -157,15 +186,15 @@
     </div>
 
     <div id="pack-screen">
-        <div id="pack-letter" style="font-size:5rem; color:var(--accent); font-weight:bold;">?</div>
+        <div id="pack-letter" style="font-size:5rem; color:var(--accent); font-weight:bold; margin-bottom: 20px;">?</div>
         <div id="pack-result"></div>
-        <button id="btn-pack-done" style="display:none; width:200px; margin-top:20px;" onclick="closePack()">PŘIJMOUT</button>
+        <button id="btn-pack-done" style="display:none; width:220px; margin-top:30px;" onclick="closePack()">PŘIDAT DO TÝMU</button>
     </div>
 
 <script>
     let game = {
         money: 10000, players: [], inventory: [], matches: 0,
-        league: [{n:"Eagles", a:5, p:0}, {n:"Bulldogs", a:15, p:0}, {n:"Titans", a:25, p:0}]
+        league: [{n:"FBC Praha", a:6, p:0}, {n:"Tatran SD", a:14, p:0}, {n:"Vitkovice", a:24, p:0}]
     };
 
     function changeScr(id) {
@@ -204,26 +233,73 @@
         document.getElementById('match-status').innerText = ready < 6 ? `UNAVENI (${ready}/6)` : "PŘIPRAVEN";
     }
 
+    // --- OPRAVENÁ SIMULACE 5 VS 5 ---
     function playMatch() {
+        let pT = game.league.find(t=>t.isPlayer);
         let opp = game.league.filter(t=>!t.isPlayer)[Math.floor(Math.random()*3)];
-        if(game.players.length < 10) opp.a = Math.min(opp.a, 8); // Scalování na začátku
+        if(pT.a < 10) opp.a = Math.min(opp.a, 8); 
 
         document.getElementById('match-anim').style.display = 'block';
+        const canvas = document.getElementById('match-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
         let time = 30; let sh=0, sa=0;
+        
+        // Inicializace 5 vs 5 hráčů a míčku
+        let players = [];
+        for(let i=0; i<5; i++) players.push({x: 50, y: 30 + i*30, dx: 0, dy: 0, team: 'h'});
+        for(let i=0; i<5; i++) players.push({x: canvas.width - 50, y: 30 + i*30, dx: 0, dy: 0, team: 'a'});
+        let ball = {x: canvas.width/2, y: canvas.height/2, dx: 2, dy: 1.5};
+
         let interval = setInterval(() => {
             time--;
-            if(Math.random()<0.1) { if(Math.random()>0.5) sh++; else sa++; }
-            document.getElementById('score-h').innerText = sh;
-            document.getElementById('score-a').innerText = sa;
+            // Šance na gól podle pravdy
+            if(Math.random()<0.1) { 
+                if(Math.random()>0.5) sh++; else sa++; 
+                document.getElementById('score-h').innerText = sh;
+                document.getElementById('score-a').innerText = sa;
+            }
             if(time <= 0) { clearInterval(interval); endMatch(sh, sa, opp); }
         }, 1000);
+
+        function animate() {
+            if(document.getElementById('match-anim').style.display === 'none') return;
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            
+            // Branky
+            ctx.strokeStyle = "rgba(255,255,255,0.2)";
+            ctx.strokeRect(0, canvas.height/2 - 25, 10, 50);
+            ctx.strokeRect(canvas.width - 10, canvas.height/2 - 25, 10, 50);
+
+            // Míček
+            ball.x += ball.dx; ball.y += ball.dy;
+            if(ball.x<5 || ball.x>canvas.width-5) ball.dx *= -1;
+            if(ball.y<5 || ball.y>canvas.height-5) ball.dy *= -1;
+            ctx.fillStyle = "#fff";
+            ctx.beginPath(); ctx.arc(ball.x, ball.y, 3, 0, 7); ctx.fill();
+
+            // Hráči
+            players.forEach(p => {
+                p.x += (Math.random()-0.5)*4; p.y += (Math.random()-0.5)*4;
+                // Držení v hřišti
+                p.x = Math.max(15, Math.min(canvas.width-15, p.x));
+                p.y = Math.max(15, Math.min(canvas.height-15, p.y));
+                
+                ctx.fillStyle = p.team === 'h' ? '#fbbf24' : '#fff';
+                ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, 7); ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
     }
 
     function endMatch(sh, sa, opp) {
         document.getElementById('match-anim').style.display = 'none';
-        let myAvg = Math.round(game.players.reduce((a,b)=>a+b.stat,0)/game.players.length);
-        let diff = myAvg - opp.a;
-        let prob = 67; // default pro stejné AVG
+        let pT = game.league.find(t=>t.isPlayer);
+        let diff = pT.a - opp.a;
+        let prob = 67; 
         if(diff <= -8) prob = 1; else if(diff === -7) prob = 5; else if(diff === -1) prob = 50; else if(diff >= 2) prob = 99;
         
         let win = (game.matches === 0) ? true : (Math.random()*100 < prob);
@@ -231,14 +307,14 @@
         let bonus = Math.random() < 0.1 ? 1000 : 0;
         
         game.money += (reward + bonus);
-        if(win) game.league.find(t=>t.isPlayer).p += 3;
+        if(win) pT.p += 3;
         game.matches++;
         
         game.players.filter(p => p.sleepUntil < Date.now()).forEach(p => {
             p.energy = Math.max(0, p.energy - Math.floor(Math.random()*15 + 5));
         });
 
-        alert(win ? `VÝHRA! +${reward} 🪙` : "PROHRA!");
+        alert(win ? `VÝHRA! +${reward} 🪙` : "PROHRA. Příště to vyjde!");
         save(); changeScr('match');
     }
 
@@ -252,10 +328,11 @@
             let cRem = Math.ceil((p.cooldownUntil - Date.now())/1000);
 
             cont.innerHTML += `<div class="card">
-                <b>${p.name}</b> (Lvl ${p.stat}) | E: ${p.energy}%<br>
-                ${s ? `<button disabled>SPÍ (${sRem}s)</button>` : 
-                 (c ? `<button disabled>REGENERACE (${Math.floor(cRem/60)}m)</button>` : 
-                 `<button onclick="doSleep(${p.id})">SPÁNEČEK</button>`)}
+                <div style="display:flex; justify-content:space-between"><b>${p.name}</b> <span>${p.energy}% ⚡</span></div>
+                <div style="font-size:0.75rem; color:gray; margin-bottom:10px;">Lvl ${p.stat}</div>
+                ${s ? `<button disabled style="background:#1e1b4b; color:#818cf8">TVRDÝ SPÁNEK (${sRem}s)</button>` : 
+                 (c ? `<button disabled style="background:#222; color:gray">REGENERACE (${Math.floor(cRem/60)}m)</button>` : 
+                 `<button onclick="doSleep(${p.id})">SPÁNEČEK PRO HRÁČE</button>`)}
             </div>`;
         });
     }
@@ -270,7 +347,7 @@
 
     function buyPack(type) {
         let cost = {bronze:5000, silver:10000, gold:15000}[type];
-        if(game.money < cost) return alert("Málo peněz!");
+        if(game.money < cost) return alert("Nedostatek financí!");
         game.money -= cost;
         
         document.getElementById('pack-screen').style.display = 'flex';
@@ -280,12 +357,20 @@
         window.tempP = {name: "Hráč "+(game.players.length+1), stat: lvl, energy:100, id:Date.now(), sleepUntil:0, cooldownUntil:0};
         window.tempD = Math.floor(Math.random()*6);
 
-        setTimeout(()=> { document.getElementById('pack-letter').innerText = window.tempP.name[0]; }, 1000);
+        let letter = document.getElementById('pack-letter');
+        letter.innerText = "?";
+        setTimeout(()=> { letter.innerText = window.tempP.name[0]; }, 1000);
         setTimeout(()=> {
-            document.getElementById('pack-letter').innerText = "";
-            document.getElementById('pack-result').innerHTML = `<div class="reveal-card"><h1>${lvl}</h1><p>${window.tempP.name}</p><p>+${window.tempD}x 🥤</p></div>`;
+            letter.innerText = "";
+            document.getElementById('pack-result').innerHTML = `
+                <div class="reveal-card">
+                    <div style="font-size:0.8rem; color:gray">ELITE DRAFT</div>
+                    <h1 style="font-size:4rem; margin:10px 0;">${lvl}</h1>
+                    <p>${window.tempP.name}</p>
+                    <p style="color:#d97706; font-weight:bold;">+${window.tempD}x ENERGEŤÁK 🥤</p>
+                </div>`;
             document.getElementById('btn-pack-done').style.display = 'block';
-        }, 2000);
+        }, 2200);
     }
 
     function closePack() {
@@ -301,27 +386,40 @@
     function renderBag() {
         const g = document.getElementById('bag-grid'); g.innerHTML = "";
         game.inventory.forEach((item, i) => {
-            g.innerHTML += `<div class="card" onclick="useDr(${i})" style="text-align:center;">🥤<br>x${item.count}</div>`;
+            g.innerHTML += `<div class="card" onclick="useDr(${i})" style="text-align:center; padding:10px;">
+                <span style="font-size:2rem;">🥤</span><br>
+                <span style="font-weight:bold; color:var(--accent)">x${item.count}</span>
+            </div>`;
         });
     }
 
     function useDr(idx) {
-        let n = prompt("Komu dát drink?");
+        let n = prompt("Zadejte jméno hráče:");
+        if(!n) return;
         let p = game.players.find(x=>x.name.toLowerCase() == n.toLowerCase());
-        if(p) { p.energy=100; p.sleepUntil=0; game.inventory[idx].count--; if(game.inventory[idx].count==0) game.inventory.splice(idx,1); save(); renderBag(); }
+        if(p) { 
+            p.energy=100; p.sleepUntil=0; 
+            game.inventory[idx].count--; 
+            if(game.inventory[idx].count==0) game.inventory.splice(idx,1); 
+            save(); renderBag(); alert(p.name + " je plný energie!");
+        } else alert("Hráč nenalezen!");
     }
 
     function renderLeague() {
         const b = document.getElementById('league-table'); b.innerHTML = "";
         game.league.sort((a,b)=>b.p - a.p).forEach(t => {
-            b.innerHTML += `<tr style="${t.isPlayer?'color:var(--accent)':''}"><td>${t.n}</td><td>${t.a}</td><td>${t.p}</td></tr>`;
+            b.innerHTML += `<tr style="${t.isPlayer?'background:rgba(251,191,36,0.1); color:var(--accent)':''}">
+                <td style="padding: 10px 5px;">${t.n}</td>
+                <td>${t.a}</td>
+                <td>${t.p}</td>
+            </tr>`;
         });
     }
 
-    function save() { localStorage.setItem('fb_final_v2', JSON.stringify(game)); }
+    function save() { localStorage.setItem('fb_final_v3', JSON.stringify(game)); }
 
     window.onload = () => {
-        let saved = localStorage.getItem('fb_final_v2');
+        let saved = localStorage.getItem('fb_final_v3');
         if(saved) {
             game = JSON.parse(saved);
             if(game.teamName) {
@@ -331,7 +429,9 @@
                 changeScr('match');
             }
         }
-        setInterval(() => { if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep(); }, 1000);
+        setInterval(() => { 
+            if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep(); 
+        }, 1000);
     };
 </script>
 </body>
