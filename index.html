@@ -3,53 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Elite Manager | Gold Edition</title>
+    <title>Floorball Manager Pro</title>
     <style>
-        :root {
-            --accent: #fbbf24;
-            --bg: #05070a;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --glass: rgba(15, 20, 30, 0.95);
-        }
-
+        :root { --accent: #fbbf24; --bg: #05070a; --glass: rgba(15, 20, 30, 0.95); }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; margin: 0; overflow: hidden; }
-
-        /* TOP UI */
-        .top-nav { background: var(--glass); display: flex; justify-content: space-around; padding: 15px 5px; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; }
-        .stat-val { color: var(--accent); display: block; font-size: 1.1rem; }
-
+        
+        /* UI Components */
+        .top-nav { background: var(--glass); display: flex; justify-content: space-around; padding: 15px 5px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .stat-val { color: var(--accent); display: block; font-size: 1.1rem; font-weight: bold; }
+        
         .screen { display: none; height: 100vh; padding: 20px; box-sizing: border-box; overflow-y: auto; padding-bottom: 120px; }
         .active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .header { font-size: 1.4rem; font-weight: 900; text-transform: uppercase; margin-bottom: 20px; border-left: 4px solid var(--accent); padding-left: 15px; }
-        .card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 15px; margin-bottom: 10px; }
+        .header { font-size: 1.4rem; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; border-left: 4px solid var(--accent); padding-left: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 15px; margin-bottom: 10px; }
 
-        /* SIMULACE - FIXED & SMOOTH */
-        .match-box {
-            width: 100%; height: 180px; background: radial-gradient(circle, #064e3b, #022c22);
-            border-radius: 16px; border: 2px solid #059669; position: relative; margin-bottom: 15px; display: none; overflow: hidden;
-        }
-        canvas { width: 100%; height: 100%; display: block; }
-        .scoreboard { position: absolute; top: 0; width: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; padding: 5px 0; font-weight: bold; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        /* Progress Bar Styles */
+        .p-bar-bg { width: 100%; height: 8px; background: #222; border-radius: 4px; margin-top: 8px; overflow: hidden; }
+        .p-bar-fill { height: 100%; transition: width 0.3s linear; }
+        .energy-fill { background: linear-gradient(90deg, #ef4444, #22c55e); }
+        .sleep-fill { background: #3b82f6; }
 
-        /* INVENTÁŘ 5x4 */
-        .grid-bag { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); gap: 8px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 12px; height: 280px; }
-        .slot { background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.2rem; }
-        .stack-count { position: absolute; bottom: 2px; right: 4px; font-size: 0.6rem; color: var(--accent); font-weight: bold; }
+        /* Match Simulation */
+        .match-box { width: 100%; height: 180px; background: radial-gradient(circle, #064e3b, #022c22); border-radius: 16px; position: relative; margin-bottom: 15px; display: none; overflow: hidden; border: 2px solid #059669; }
+        .scoreboard { position: absolute; top: 0; width: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; padding: 5px 0; font-weight: bold; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        canvas { width: 100%; height: 100%; }
 
-        /* BUTTONS */
-        button { background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: 800; width: 100%; cursor: pointer; text-transform: uppercase; }
-        button:disabled { background: #222; color: #555; }
+        /* Inventory 5x4 */
+        .grid-bag { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 12px; }
+        .slot { background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.2rem; }
+        .stack { position: absolute; bottom: 2px; right: 4px; font-size: 0.6rem; color: var(--accent); }
 
-        /* NAV */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: var(--glass); display: flex; justify-content: space-around; align-items: center; z-index: 100; }
-        .nav-item { font-size: 1.6rem; opacity: 0.4; cursor: pointer; transition: 0.2s; }
-        .nav-item.active { opacity: 1; color: var(--accent); transform: translateY(-3px); }
+        /* Buttons */
+        button { background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; width: 100%; }
+        button:disabled { background: #222; color: #555; cursor: not-allowed; }
+        .btn-small { width: auto; padding: 5px 10px; font-size: 0.7rem; }
 
-        /* PACK */
-        #pack-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; }
-        .reveal-card { width: 220px; height: 300px; background: #fff; border: 8px solid var(--accent); border-radius: 20px; color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 0 30px var(--accent); }
+        /* Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: var(--glass); display: flex; justify-content: space-around; align-items: center; z-index: 100; border-top: 1px solid rgba(255,255,255,0.1); }
+        .nav-item { font-size: 1.6rem; opacity: 0.4; transition: 0.2s; }
+        .nav-item.active { opacity: 1; color: var(--accent); }
     </style>
 </head>
 <body>
@@ -57,70 +51,65 @@
     <div id="top-ui" class="top-nav" style="display:none">
         <div align="center">BANKA <span class="stat-val" id="m-money">0</span></div>
         <div align="center">SÍLA <span class="stat-val" id="m-avg">0</span></div>
-        <div align="center">TÝM <span class="stat-val" id="m-count">0</span></div>
+        <div align="center">ZÁPAS ZA <span class="stat-val" id="m-match-timer">0s</span></div>
     </div>
 
     <div id="scr-reg" class="screen active">
-        <div class="header">Registrace týmu</div>
+        <div class="header">Nový Klub</div>
         <div class="card">
-            <input type="text" id="reg-team" placeholder="Název klubu..." style="width:100%; padding:12px; background:#111; border:1px solid #333; color:#fff; border-radius:8px; margin-bottom:15px;">
-            <button onclick="startGame()">Vytvořit klub</button>
+            <input type="text" id="reg-team" placeholder="Název týmu..." style="width:100%; padding:12px; background:#111; border:1px solid #333; color:#fff; border-radius:8px; margin-bottom:15px; box-sizing:border-box;">
+            <button onclick="initGame()">Vstoupit do ligy</button>
         </div>
     </div>
 
     <div id="scr-match" class="screen">
-        <div class="header">Zápas</div>
+        <div class="header">Aréna</div>
         <div id="match-anim" class="match-box">
             <div class="scoreboard"><span id="score-h" style="color:var(--accent)">0</span> &nbsp;:&nbsp; <span id="score-a">0</span></div>
             <canvas id="match-canvas"></canvas>
         </div>
         <div class="card">
-            <button id="btn-match" onclick="startMatch()">Hrát ligové kolo</button>
+            <button id="btn-match-start" onclick="startMatchSimulation()">ODEHRÁT ZÁPAS</button>
         </div>
         <div class="card">
-            <table style="width:100%; font-size:0.85rem;">
+            <table style="width:100%; font-size:0.85rem; border-collapse:collapse;">
                 <tbody id="league-table"></tbody>
             </table>
         </div>
     </div>
 
     <div id="scr-sleep" class="screen">
-        <div class="header">Kabina</div>
-        <div id="sleep-container"></div>
+        <div class="header">
+            Kabina
+            <button class="btn-small" onclick="selectTopSix()">VYBRAT NEJLEPŠÍ</button>
+        </div>
+        <div id="sleep-list"></div>
     </div>
 
     <div id="scr-shop" class="screen">
         <div class="header">Draft</div>
-        <div class="card" onclick="openPack('bronze')"><b>BRONZ (1-9 LVL)</b><br>5 000 🪙</div>
-        <div class="card" onclick="openPack('silver')"><b>STŘÍBRO (10-19 LVL)</b><br>10 000 🪙</div>
-        <div class="card" onclick="openPack('gold')"><b>GOLD (20-29 LVL)</b><br>15 000 🪙</div>
+        <div class="card" onclick="buyPack('bronze')"><b>BRONZ</b> (1-9 LVL) <span style="float:right">5k 🪙</span></div>
+        <div class="card" onclick="buyPack('silver')"><b>STŘÍBRO</b> (10-19 LVL) <span style="float:right">10k 🪙</span></div>
+        <div class="card" onclick="buyPack('gold')"><b>GOLD ELITE</b> (20-29 LVL) <span style="float:right">15k 🪙</span></div>
     </div>
 
     <div id="scr-bag" class="screen">
-        <div class="header">Batoh (5x4)</div>
+        <div class="header">Inventář (5x4)</div>
         <div class="grid-bag" id="bag-grid"></div>
     </div>
 
     <div id="bot-nav" class="bottom-nav" style="display:none">
-        <div class="nav-item" onclick="nav('sleep')">🛌</div>
-        <div class="nav-item active" onclick="nav('match')">🥅</div>
-        <div class="nav-item" onclick="nav('shop')">📦</div>
-        <div class="nav-item" onclick="nav('bag')">🎒</div>
-    </div>
-
-    <div id="pack-screen">
-        <div id="pack-letter" style="font-size:5rem; color:var(--accent); font-weight:bold; margin-bottom: 20px;">?</div>
-        <div id="pack-result"></div>
-        <button id="btn-pack-done" style="display:none; width:220px; margin-top:20px;" onclick="addLoot()">PŘIDAT</button>
+        <div class="nav-item" onclick="showScr('sleep')">🛌</div>
+        <div class="nav-item active" onclick="showScr('match')">🥅</div>
+        <div class="nav-item" onclick="showScr('shop')">📦</div>
+        <div class="nav-item" onclick="showScr('bag')">🎒</div>
     </div>
 
 <script>
-    let db = {
-        money: 10000, players: [], bag: Array(20).fill(null), matches: 0,
-        league: [
-            {n:"FBC Tábor", a:3, p:0}, {n:"SK Jihlava", a:5, p:0}, 
-            {n:"Florbal Brno", a:8, p:0}, {n:"FbŠ Bohemians", a:15, p:0}
-        ]
+    let state = {
+        money: 10000, players: [], bag: Array(20).fill(null),
+        nextMatchTime: 0, teamName: "",
+        league: [{n:"FBC Tábor", a:3, p:0}, {n:"SK Jihlava", a:6, p:0}, {n:"Bulldogs", a:8, p:0}]
     };
 
     const names = ["Filip", "Adam", "Jiří", "Marek", "Patrik", "Lukáš", "Jan", "Tomáš", "David", "Matěj"];
@@ -128,182 +117,205 @@
 
     function genName() { return names[Math.floor(Math.random()*names.length)] + " " + surnames[Math.floor(Math.random()*surnames.length)]; }
 
-    function nav(id) {
+    function save() { localStorage.setItem('fb_manager_v6', JSON.stringify(state)); }
+
+    function initGame() {
+        state.teamName = document.getElementById('reg-team').value || "Můj Klub";
+        for(let i=0; i<6; i++) state.players.push({name: genName(), stat: 1, energy: 100, id: Date.now()+i, sleepUntil: 0, cooldownUntil: 0, active: true});
+        state.league.push({n: state.teamName, a: 1, p: 0, isPlayer: true});
+        document.getElementById('scr-reg').style.display = 'none';
+        document.getElementById('bot-nav').style.display = 'flex';
+        document.getElementById('top-ui').style.display = 'flex';
+        save(); showScr('match');
+    }
+
+    function showScr(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('scr-' + id).classList.add('active');
         const items = document.querySelectorAll('.nav-item');
-        if(id=='sleep') { items[0].classList.add('active'); renderSleep(); }
-        if(id=='match') { items[1].classList.add('active'); renderLeague(); }
-        if(id=='bag') { items[3].classList.add('active'); renderBag(); }
+        const map = {sleep:0, match:1, shop:2, bag:3};
+        items[map[id]].classList.add('active');
+        if(id==='sleep') renderSleep();
+        if(id==='match') renderLeague();
+        if(id==='bag') renderBag();
         updateUI();
     }
 
-    function startGame() {
-        db.teamName = document.getElementById('reg-team').value || "Můj Klub";
-        for(let i=0; i<6; i++) db.players.push({name: genName(), stat: 1, energy: 100, id: Date.now()+i, sleepUntil: 0, cooldownUntil: 0});
-        db.league.push({n: db.teamName, a: 1, p: 0, isPlayer: true});
-        document.getElementById('scr-reg').classList.remove('active');
-        document.getElementById('bot-nav').style.display = 'flex';
-        document.getElementById('top-ui').style.display = 'flex';
-        save(); nav('match');
-    }
-
     function updateUI() {
-        document.getElementById('m-money').innerText = db.money.toLocaleString();
-        let avg = db.players.length ? Math.round(db.players.reduce((a,b)=>a+b.stat,0)/db.players.length) : 0;
+        document.getElementById('m-money').innerText = state.money.toLocaleString();
+        let activePlayers = state.players.filter(p => p.active);
+        let avg = activePlayers.length ? Math.round(activePlayers.reduce((a,b)=>a+b.stat,0)/activePlayers.length) : 0;
         document.getElementById('m-avg').innerText = avg;
-        document.getElementById('m-count').innerText = db.players.length;
-        let pT = db.league.find(t=>t.isPlayer); if(pT) pT.a = avg;
+        let pT = state.league.find(t=>t.isPlayer); if(pT) pT.a = avg;
+        
+        let matchCD = Math.max(0, Math.ceil((state.nextMatchTime - Date.now())/1000));
+        document.getElementById('m-match-timer').innerText = matchCD + "s";
+        document.getElementById('btn-match-start').disabled = (matchCD > 0 || activePlayers.length < 6);
     }
 
-    // --- SMOOTH SIMULATION ---
-    function startMatch() {
-        let pT = db.league.find(t=>t.isPlayer);
-        let opps = db.league.filter(t=>!t.isPlayer);
-        // Do AVG 10 jsou soupeři max 8
-        if(pT.a < 10) opps = opps.filter(o => o.a <= 8);
-        let opp = opps[Math.floor(Math.random()*opps.length)];
+    function selectTopSix() {
+        state.players.forEach(p => p.active = false);
+        let sorted = [...state.players].sort((a,b) => b.stat - a.stat);
+        for(let i=0; i<Math.min(6, sorted.length); i++) {
+            let p = state.players.find(x => x.id === sorted[i].id);
+            p.active = true;
+        }
+        renderSleep();
+        save();
+    }
 
+    function renderSleep() {
+        const list = document.getElementById('sleep-list');
+        list.innerHTML = "";
+        state.players.forEach(p => {
+            let isSleeping = p.sleepUntil > Date.now();
+            let isCooldown = p.cooldownUntil > Date.now();
+            let progress = isSleeping ? ((p.sleepUntil - Date.now())/60000)*100 : p.energy;
+            
+            list.innerHTML += `
+                <div class="card" style="border-left: 4px solid ${p.active ? 'var(--accent)' : 'transparent'}">
+                    <div style="display:flex; justify-content:space-between">
+                        <b>${p.name}</b> <span>LVL ${p.stat}</span>
+                    </div>
+                    <div class="p-bar-bg">
+                        <div class="p-bar-fill ${isSleeping ? 'sleep-fill' : 'energy-fill'}" style="width: ${progress}%"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                        <small>${isSleeping ? 'SPÍ...' : 'ENERGIE: '+p.energy+'%'}</small>
+                        ${(!isSleeping && !isCooldown) ? 
+                            `<button class="btn-small" onclick="startSleep(${p.id})">SPÁNEČEK</button>` : 
+                            `<small style="color:gray">${isSleeping ? 'Zbývá: '+Math.ceil((p.sleepUntil-Date.now())/1000)+'s' : 'REGENERACE'}</small>`
+                        }
+                    </div>
+                </div>`;
+        });
+    }
+
+    function startSleep(id) {
+        let p = state.players.find(x => x.id === id);
+        p.sleepUntil = Date.now() + 60000;
+        p.cooldownUntil = Date.now() + 600000;
+        p.energy = 100;
+        renderSleep();
+        save();
+    }
+
+    // --- SMOOTH MATCH SIMULATION ---
+    function startMatchSimulation() {
+        state.nextMatchTime = Date.now() + 60000;
         document.getElementById('match-anim').style.display = 'block';
         const canvas = document.getElementById('match-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
 
         let time = 30; let sh=0, sa=0;
-        let ball = {x: canvas.width/2, y: canvas.height/2, dx: 3, dy: 2.5};
+        let ball = {x: canvas.width/2, y: canvas.height/2, dx: 2, dy: 1.5};
         let plys = [];
-        for(let i=0; i<5; i++) plys.push({x: 30, y: 30+i*30, dx: 0, dy:0, team:'h'});
-        for(let i=0; i<5; i++) plys.push({x: canvas.width-30, y: 30+i*30, dx: 0, dy:0, team:'a'});
+        for(let i=0; i<5; i++) plys.push({x: 40, y: 30+i*30, dx:0, team:'h'});
+        for(let i=0; i<5; i++) plys.push({x: canvas.width-40, y: 30+i*30, dx:0, team:'a'});
 
-        let timer = setInterval(() => {
+        let loop = setInterval(() => {
             time--;
-            if(Math.random() < 0.1) {
-                if(Math.random() > 0.45) sh++; else sa++;
+            if(Math.random() < 0.12) {
+                if(Math.random() > 0.48) sh++; else sa++;
                 document.getElementById('score-h').innerText = sh;
                 document.getElementById('score-a').innerText = sa;
             }
-            if(time <= 0) { clearInterval(timer); endMatch(sh, sa, opp); }
+            if(time <= 0) {
+                clearInterval(loop);
+                finishMatch(sh, sa);
+            }
         }, 1000);
 
-        function frame() {
-            if(document.getElementById('match-anim').style.display == 'none') return;
+        function draw() {
+            if(document.getElementById('match-anim').style.display === 'none') return;
             ctx.clearRect(0,0,canvas.width, canvas.height);
             // Ball
             ball.x += ball.dx; ball.y += ball.dy;
             if(ball.x<5 || ball.x>canvas.width-5) ball.dx*=-1;
             if(ball.y<5 || ball.y>canvas.height-5) ball.dy*=-1;
-            ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(ball.x, ball.y, 4, 0, 7); ctx.fill();
+            ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(ball.x,ball.y,4,0,7); ctx.fill();
             // Players
             plys.forEach(p => {
-                p.x += (Math.random()-0.5)*5; p.y += (Math.random()-0.5)*5;
-                p.x = Math.max(10, Math.min(canvas.width-10, p.x));
-                p.y = Math.max(10, Math.min(canvas.height-10, p.y));
-                ctx.fillStyle = p.team=='h'?'#fbbf24':'#fff';
-                ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, 7); ctx.fill();
+                p.x += (Math.random()-0.5)*4;
+                ctx.fillStyle = p.team==='h' ? '#fbbf24' : '#fff';
+                ctx.beginPath(); ctx.arc(p.x, p.y + (Math.random()-0.5)*10, 6, 0, 7); ctx.fill();
             });
-            requestAnimationFrame(frame);
+            requestAnimationFrame(draw);
         }
-        frame();
+        draw();
     }
 
-    function endMatch(sh, sa, opp) {
+    function finishMatch(sh, sa) {
         document.getElementById('match-anim').style.display = 'none';
-        let pT = db.league.find(t=>t.isPlayer);
-        let diff = pT.a - opp.a;
-        let prob = 67;
-        if(diff <= -8) prob = 1; else if(diff === -1) prob = 50; else if(diff >= 2) prob = 99;
-        let win = (db.matches === 0) ? true : (Math.random()*100 < prob);
+        let win = sh > sa;
+        if(win) { state.money += 750; state.league.find(t=>t.isPlayer).p += 3; alert("VÝHRA! +750 🪙"); }
+        else if(sh === sa) { state.money += 200; state.league.find(t=>t.isPlayer).p += 1; alert("REMÍZA. +200 🪙"); }
+        else alert("PROHRA.");
         
-        if(win) { db.money += 750; pT.p += 3; alert("Vítězství! +750 🪙"); } else alert("Prohra!");
-        db.matches++; save(); nav('match');
+        state.players.filter(p=>p.active).forEach(p => p.energy = Math.max(0, p.energy - 15));
+        save(); updateUI(); renderLeague();
     }
 
-    // --- PACKS ---
-    function openPack(type) {
+    function renderLeague() {
+        const b = document.getElementById('league-table'); b.innerHTML = "";
+        state.league.sort((a,b)=>b.p - a.p).forEach(t => {
+            b.innerHTML += `<tr style="${t.isPlayer?'color:var(--accent)':''}">
+                <td style="padding:8px">${t.n}</td><td align="center">LVL ${t.a}</td><td align="right">${t.p} b.</td>
+            </tr>`;
+        });
+    }
+
+    function buyPack(type) {
         let cost = {bronze:5000, silver:10000, gold:15000}[type];
-        if(db.money < cost) return alert("Málo peněz!");
-        db.money -= cost;
-        document.getElementById('pack-screen').style.display = 'flex';
-        document.getElementById('btn-pack-done').style.display = 'none';
-        
-        let range = type=='bronze'?[1,9]:type=='silver'?[10,19]:[20,29];
+        if(state.money < cost) return alert("Málo peněz!");
+        state.money -= cost;
+        let range = type==='bronze'?[1,9]:type==='silver'?[10,19]:[20,29];
         let lvl = Math.floor(Math.random()*(range[1]-range[0]+1))+range[0];
-        window.newP = {name: genName(), stat: lvl, energy:100, id:Date.now(), sleepUntil:0, cooldownUntil:0};
-        window.newD = Math.floor(Math.random()*6);
-
-        let ltr = document.getElementById('pack-letter'); ltr.innerText = "?";
-        setTimeout(()=> ltr.innerText = window.newP.name[0], 800);
-        setTimeout(()=> {
-            ltr.innerText = "";
-            document.getElementById('pack-result').innerHTML = `<div class="reveal-card"><h1>${lvl}</h1><p>${window.newP.name}</p><small>+${window.newD}x Drink</small></div>`;
-            document.getElementById('btn-pack-done').style.display = 'block';
-        }, 1800);
-    }
-
-    function addLoot() {
-        db.players.push(window.newP);
-        if(window.newD > 0) {
-            let slot = db.bag.find(s => s && s.type == 'drink' && s.count < 10);
-            if(slot) slot.count = Math.min(10, slot.count + window.newD);
-            else {
-                let empty = db.bag.findIndex(s => s === null);
-                if(empty !== -1) db.bag[empty] = {type: 'drink', count: window.newD};
-            }
-        }
-        document.getElementById('pack-screen').style.display = 'none';
+        let newP = {name: genName(), stat: lvl, energy:100, id:Date.now(), sleepUntil:0, cooldownUntil:0, active:false};
+        state.players.push(newP);
+        
+        // Add drink
+        let empty = state.bag.findIndex(s => s === null);
+        if(empty !== -1) state.bag[empty] = {count: 5};
+        
+        alert("Získán hráč: " + newP.name + " (LVL " + lvl + ")");
         save(); updateUI();
     }
 
-    // --- BAG 5x4 ---
     function renderBag() {
         const grid = document.getElementById('bag-grid'); grid.innerHTML = "";
-        db.bag.forEach((item, i) => {
+        state.bag.forEach((item, i) => {
             grid.innerHTML += `<div class="slot" onclick="useItem(${i})">
                 ${item ? '🥤' : ''}
-                ${item ? `<span class="stack-count">x${item.count}</span>` : ''}
+                ${item ? `<span class="stack">x${item.count}</span>` : ''}
             </div>`;
         });
     }
 
     function useItem(i) {
-        if(!db.bag[i]) return;
-        let n = prompt("Jméno hráče:");
-        let p = db.players.find(x => x.name.toLowerCase() == (n||"").toLowerCase());
-        if(p) { p.energy=100; p.sleepUntil=0; db.bag[i].count--; if(db.bag[i].count==0) db.bag[i]=null; save(); renderBag(); }
+        if(!state.bag[i]) return;
+        let name = prompt("Komu dát drink? (Zadej přesné jméno)");
+        let p = state.players.find(x => x.name.toLowerCase() === (name||"").toLowerCase());
+        if(p) {
+            p.energy = 100; p.sleepUntil = 0;
+            state.bag[i].count--; if(state.bag[i].count <= 0) state.bag[i] = null;
+            save(); renderBag(); alert("Hráč " + p.name + " je fit!");
+        }
     }
 
-    function renderSleep() {
-        const c = document.getElementById('sleep-container'); c.innerHTML = "";
-        db.players.forEach(p => {
-            let s = p.sleepUntil > Date.now();
-            let cld = p.cooldownUntil > Date.now();
-            c.innerHTML += `<div class="card">
-                <b>${p.name}</b> (LVL ${p.stat}) | ${p.energy}%⚡<br>
-                ${s ? `<button disabled>SPÍ (${Math.ceil((p.sleepUntil-Date.now())/1000)}s)</button>` : 
-                 (cld ? `<button disabled>COOLDOWN</button>` : `<button onclick="doSleep(${p.id})">SPÁNEČEK</button>`)}
-            </div>`;
-        });
-    }
-
-    function doSleep(id) {
-        let p = db.players.find(x=>x.id==id);
-        p.sleepUntil = Date.now() + 60000; p.cooldownUntil = Date.now() + 600000; p.energy = 100;
-        save(); renderSleep();
-    }
-
-    function renderLeague() {
-        const b = document.getElementById('league-table'); b.innerHTML = "";
-        db.league.sort((a,b)=>b.p-a.p).forEach(t => {
-            b.innerHTML += `<tr style="${t.isPlayer?'color:var(--accent)':''}"><td>${t.n}</td><td align="center">LVL ${t.a}</td><td align="right">${t.p} b.</td></tr>`;
-        });
-    }
-
-    function save() { localStorage.setItem('fb_v5_final', JSON.stringify(db)); }
     window.onload = () => {
-        let s = localStorage.getItem('fb_v5_final');
-        if(s) { db = JSON.parse(s); document.getElementById('scr-reg').style.display='none'; document.getElementById('bot-nav').style.display='flex'; document.getElementById('top-ui').style.display='flex'; nav('match'); }
-        setInterval(() => { if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep(); }, 1000);
+        let saved = localStorage.getItem('fb_manager_v6');
+        if(saved) {
+            state = JSON.parse(saved);
+            document.getElementById('scr-reg').style.display = 'none';
+            document.getElementById('bot-nav').style.display = 'flex';
+            document.getElementById('top-ui').style.display = 'flex';
+            showScr('match');
+        }
+        setInterval(updateUI, 1000);
+        setInterval(() => { if(document.querySelector('#scr-sleep.active')) renderSleep(); }, 1000);
     };
 </script>
 </body>
