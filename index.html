@@ -3,39 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager | v6.6 Fix</title>
+    <title>Floorball Manager | v6.7 TOTAL FIX</title>
     <style>
         :root { --accent: #fbbf24; --bg: #05070a; --glass: rgba(15, 20, 30, 0.95); }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; margin: 0; overflow: hidden; }
         
-        .top-nav { background: var(--glass); display: flex; justify-content: space-around; padding: 12px 5px; border-bottom: 1px solid #333; position: sticky; top:0; z-index: 1000; }
+        .top-nav { background: var(--glass); display: flex; justify-content: space-around; padding: 12px 5px; border-bottom: 1px solid #333; position: relative; z-index: 1000; }
         .stat-val { color: var(--accent); display: block; font-size: 1.1rem; font-weight: bold; }
         
         .screen { display: none; height: 100vh; padding: 20px; box-sizing: border-box; overflow-y: auto; padding-bottom: 120px; }
-        .active { display: block; }
+        .active { display: block !important; }
 
         .header { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; border-left: 4px solid var(--accent); padding-left: 15px; }
         .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
 
         /* FIELD UI */
-        .field { width: 100%; height: 240px; background: #064e3b; border: 2px solid #059669; border-radius: 15px; position: relative; margin-bottom: 10px; }
-        .pos-btn { position: absolute; width: 48px; height: 48px; border-radius: 50%; border: 2px dashed #666; background: rgba(0,0,0,0.4); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.6rem; cursor: pointer; }
+        .field { width: 100%; height: 220px; background: #064e3b; border: 2px solid #059669; border-radius: 15px; position: relative; margin-bottom: 10px; }
+        .pos-btn { position: absolute; width: 45px; height: 45px; border-radius: 50%; border: 2px dashed #666; background: rgba(0,0,0,0.4); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.6rem; cursor: pointer; }
         .pos-btn.filled { border: 2px solid var(--accent); background: rgba(251, 191, 36, 0.2); }
         
-        #p-LW { top: 20%; left: 10%; } #p-C { top: 10%; left: 43%; } #p-RW { top: 20%; right: 10%; }
+        #p-LW { top: 15%; left: 10%; } #p-C { top: 10%; left: 43%; } #p-RW { top: 15%; right: 10%; }
         #p-LD { bottom: 15%; left: 20%; } #p-RD { bottom: 15%; right: 20%; }
 
-        .bag-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 10px; }
+        .bag-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
         .slot { aspect-ratio: 1; background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 5px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.2rem; }
         .stack { position: absolute; bottom: 1px; right: 2px; font-size: 0.6rem; color: var(--accent); }
 
-        .match-box { width: 100%; height: 150px; background: #064e3b; border-radius: 12px; position: relative; margin-bottom: 15px; display: none; overflow: hidden; }
-        .scoreboard { position: absolute; top: 0; width: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; padding: 5px 0; font-weight: 900; z-index: 10; }
+        .match-box { width: 100%; height: 140px; background: #064e3b; border-radius: 12px; position: relative; margin-bottom: 15px; display: none; overflow: hidden; }
+        .scoreboard { position: absolute; top: 0; width: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; padding: 5px 0; font-weight: 900; }
 
         button { background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; width: 100%; margin: 4px 0; }
-        button:disabled { background: #222; color: #555; }
+        button:disabled { background: #222 !important; color: #555 !important; }
 
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--glass); display: flex; justify-content: space-around; align-items: center; z-index: 1000; border-top: 1px solid #333; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--glass); display: none; justify-content: space-around; align-items: center; z-index: 1000; border-top: 1px solid #333; }
         .nav-item { font-size: 1.5rem; opacity: 0.4; cursor: pointer; }
         .nav-item.active { opacity: 1; color: var(--accent); }
 
@@ -47,19 +47,19 @@
     <div id="top-ui" class="top-nav" style="display:none">
         <div>🪙 <span class="stat-val" id="m-money">0</span></div>
         <div>LVL <span class="stat-val" id="m-avg">1</span></div>
-        <div onclick="resetData()" style="font-size:0.6rem; opacity:0.5">RESTARTOVAT</div>
+        <div onclick="resetData()" style="font-size:0.6rem; opacity:0.5; border:1px solid #444; padding:2px; border-radius:3px;">RESET HRY</div>
     </div>
 
     <div id="scr-reg" class="screen active">
-        <div class="header">Vítej Manažere</div>
+        <div class="header">Registrace Klubu</div>
         <div class="card">
-            <input type="text" id="reg-team" placeholder="Název tvého týmu..." style="width:100%; padding:12px; background:#111; border:1px solid #333; color:#fff; border-radius:8px; margin-bottom:15px; box-sizing:border-box;">
-            <button onclick="initGame()">Založit Klub</button>
+            <input type="text" id="reg-team" placeholder="Název týmu..." style="width:100%; padding:12px; background:#111; border:1px solid #333; color:#fff; border-radius:8px; margin-bottom:15px; box-sizing:border-box;">
+            <button onclick="initGame()">Vstoupit do ligy</button>
         </div>
     </div>
 
     <div id="scr-match" class="screen">
-        <div class="header">Zápasové kolo</div>
+        <div class="header">Zápas</div>
         <div id="match-anim" class="match-box">
             <div class="scoreboard"><span id="score-h">0</span> : <span id="score-a">0</span></div>
             <canvas id="match-canvas"></canvas>
@@ -74,7 +74,7 @@
     </div>
 
     <div id="scr-profile" class="screen">
-        <div class="header">Sestava týmu</div>
+        <div class="header">Sestava</div>
         <div class="field">
             <div class="pos-btn" id="p-LW" onclick="pickPos('LW')">LW</div>
             <div class="pos-btn" id="p-C" onclick="pickPos('C')">C</div>
@@ -83,15 +83,15 @@
             <div class="pos-btn" id="p-RD" onclick="pickPos('RD')">RD</div>
         </div>
         <div id="sel-list"></div>
-        <div class="header">Inventář</div>
+        <div class="header">Batoh 5x4</div>
         <div class="bag-grid" id="bag-grid"></div>
     </div>
 
     <div id="scr-shop" class="screen">
-        <div class="header">Draftování</div>
-        <button onclick="openPack('bronze')">BRONZ (5 000 🪙)</button>
-        <button onclick="openPack('silver')">STŘÍBRO (10 000 🪙)</button>
-        <button onclick="openPack('gold')">GOLD (15 000 🪙)</button>
+        <div class="header">Obchod</div>
+        <button onclick="openPack('bronze')">BRONZ (1-9 LVL) - 5k</button>
+        <button onclick="openPack('silver')">STŘÍBRO (10-19 LVL) - 10k</button>
+        <button onclick="openPack('gold')">ZLATO (20-29 LVL) - 15k</button>
     </div>
 
     <div id="pack-overlay">
@@ -100,7 +100,7 @@
         <button id="btn-pack-close" style="display:none; width:200px" onclick="closePack()">ZÍSKAT</button>
     </div>
 
-    <div id="bot-nav" class="bottom-nav" style="display:none">
+    <div id="bot-nav" class="bottom-nav">
         <div class="nav-item" onclick="showScr('sleep')">🛌</div>
         <div class="nav-item active" onclick="showScr('match')">🥅</div>
         <div class="nav-item" onclick="showScr('profile')">👤</div>
@@ -116,14 +116,17 @@
     };
 
     const posTypes = ["LW", "C", "RW", "LD", "RD"];
-    const names = ["Adam","Filip","Honza","Marek","Petr","Luky"];
+    const names = ["Petr","Honza","Marek","Filip","Adam","Luky"];
     const sname = ["Rychlý","Tvrdý","Malý","Ostrý","Nový","Modrý"];
 
-    function save() { localStorage.setItem('fb_v6_6', JSON.stringify(db)); }
+    function save() { localStorage.setItem('fb_v6_7', JSON.stringify(db)); }
     function resetData() { localStorage.clear(); location.reload(); }
 
     function initGame() {
-        db.teamName = document.getElementById('reg-team').value || "Můj Tým";
+        let name = document.getElementById('reg-team').value;
+        if(!name) { alert("Zadej název týmu!"); return; }
+        
+        db.teamName = name;
         db.players = [];
         posTypes.forEach((pos, i) => {
             let p = {name: names[i]+" "+sname[i], stat: 1, energy: 100, id: Date.now()+i, pos: pos, sleepUntil: 0, cooldownUntil: 0};
@@ -131,18 +134,29 @@
             db.lineup[pos] = p.id;
         });
         db.league.push({n: db.teamName, a: 1, p: 0, isPlayer: true});
+        
         document.getElementById('scr-reg').style.display='none';
-        document.getElementById('bot-nav').style.display='flex';
         document.getElementById('top-ui').style.display='flex';
-        save(); showScr('match');
+        document.getElementById('bot-nav').style.display='flex';
+        save();
+        showScr('match');
     }
 
     function showScr(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById('scr-' + id).classList.add('active');
+        // Skrýt vše
+        const screens = document.getElementsByClassName('screen');
+        for(let s of screens) s.style.display = 'none';
+        
+        // Ukázat vybrané
+        const target = document.getElementById('scr-' + id);
+        if(target) target.style.display = 'block';
+        
+        // Navigace
+        const navs = document.getElementsByClassName('nav-item');
+        for(let n of navs) n.classList.remove('active');
         const map = {sleep:0, match:1, profile:2, shop:3};
-        document.querySelectorAll('.nav-item')[map[id]].classList.add('active');
+        navs[map[id]].classList.add('active');
+
         if(id==='profile') { renderField(); renderBag(); }
         if(id==='sleep') renderSleep();
         if(id==='match') renderLeague();
@@ -153,8 +167,13 @@
         posTypes.forEach(pos => {
             const el = document.getElementById('p-' + pos);
             const p = db.players.find(x => x.id === db.lineup[pos]);
-            el.innerHTML = p ? `${pos}<br><b style="color:var(--accent)">${p.stat}</b>` : pos;
-            el.className = p ? "pos-btn filled" : "pos-btn";
+            if(p) {
+                el.innerHTML = `${pos}<br><b style="color:var(--accent)">${p.stat}</b>`;
+                el.classList.add('filled');
+            } else {
+                el.innerHTML = pos;
+                el.classList.remove('filled');
+            }
         });
         document.getElementById('sel-list').innerHTML = "";
     }
@@ -163,7 +182,7 @@
         const list = document.getElementById('sel-list');
         list.innerHTML = `<div class="card"><b>Vyber ${pos}:</b><br>`;
         db.players.filter(p => p.pos === pos).forEach(p => {
-            list.innerHTML += `<button style="width:auto; padding:5px; margin:2px;" onclick="setPos('${pos}', ${p.id})">${p.name} (LVL ${p.stat})</button> `;
+            list.innerHTML += `<button style="width:auto; padding:8px; margin:4px;" onclick="setPos('${pos}', ${p.id})">${p.name} (LVL ${p.stat})</button> `;
         });
         list.innerHTML += `</div>`;
     }
@@ -173,13 +192,12 @@
     function updateUI() {
         document.getElementById('m-money').innerText = db.money.toLocaleString();
         let total = 0, count = 0;
-        posTypes.forEach(pos => {
-            let p = db.players.find(x => x.id === db.lineup[pos]);
+        posTypes.forEach(p_type => {
+            let p = db.players.find(x => x.id === db.lineup[p_type]);
             if(p) { total += p.stat; count++; }
         });
         let avg = count === 5 ? Math.round(total / 5) : 0;
         document.getElementById('m-avg').innerText = avg;
-        let pT = db.league.find(t=>t.isPlayer); if(pT) pT.a = avg;
         
         let cd = Math.max(0, Math.ceil((db.nextMatch - Date.now())/1000));
         let btn = document.getElementById('btn-match-start');
@@ -190,14 +208,14 @@
     function renderSleep() {
         const l = document.getElementById('sleep-list'); l.innerHTML = "";
         db.players.forEach(p => {
-            let s = p.sleepUntil > Date.now();
-            let c = p.cooldownUntil > Date.now();
+            let isS = p.sleepUntil > Date.now();
+            let isC = p.cooldownUntil > Date.now();
             l.innerHTML += `<div class="card">
-                <b>${p.name}</b> (${p.pos}) - LVL ${p.stat}
-                <div style="height:4px; background:#222; margin:5px 0"><div style="height:100%; background:${s?'#3b82f6':'#22c55e'}; width:${p.energy}%"></div></div>
-                <div style="display:flex; justify-content:space-between; font-size:0.7rem">
-                    <span>${s ? 'Spí: '+Math.ceil((p.sleepUntil-Date.now())/1000)+'s' : 'Energie: '+p.energy+'%'}</span>
-                    ${(!s && !c) ? `<button style="width:auto; padding:2px 10px" onclick="doSleep(${p.id})">SPÁNEČEK</button>` : '<span>REGENERACE</span>'}
+                <b>${p.name}</b> (${p.pos}) | LVL ${p.stat}
+                <div style="height:6px; background:#222; margin:8px 0"><div style="height:100%; background:${isS?'#3b82f6':'#22c55e'}; width:${p.energy}%"></div></div>
+                <div style="display:flex; justify-content:space-between">
+                    <small>${isS ? 'Spí: '+Math.ceil((p.sleepUntil-Date.now())/1000)+'s' : 'E: '+p.energy+'%'}</small>
+                    ${(!isS && !isC) ? `<button class="btn-small" style="width:auto; padding:2px 10px" onclick="doSleep(${p.id})">SPÁNEČEK</button>` : '<span>REGENERACE</span>'}
                 </div>
             </div>`;
         });
@@ -223,8 +241,7 @@
             if(t<=0) { clearInterval(loop); finishMatch(h, a); }
         }, 1000);
         function d() { if(document.getElementById('match-anim').style.display==='block') {
-            ctx.clearRect(0,0,cvs.width,cvs.height);
-            ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(Math.random()*cvs.width, Math.random()*cvs.height, 3, 0, 7); ctx.fill();
+            ctx.clearRect(0,0,cvs.width,cvs.height); ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(Math.random()*cvs.width, Math.random()*cvs.height, 3, 0, 7); ctx.fill();
             requestAnimationFrame(d);
         }} d();
     }
@@ -235,12 +252,12 @@
         let prob = 67;
         if(db.matchesPlayed > 0) {
             let oppLvl = Math.floor(Math.random()*8)+1;
-            let diff = pT.a - oppLvl;
+            let diff = Math.round(document.getElementById('m-avg').innerText) - oppLvl;
             let table = {-8:1, -7:5, -6:10, -5:15, -4:20, -3:25, -2:30, -1:50, 0:67, 1:75};
             prob = table[diff] || (diff >= 2 ? 99 : 1);
         } else prob = 100;
 
-        if(Math.random()*100 < prob) { db.money += 750; pT.p += 3; alert("VÝHRA!"); } else alert("PROHRA.");
+        if(Math.random()*100 < prob) { db.money += 750; pT.p += 3; alert("VÍTĚZSTVÍ!"); } else alert("PORÁŽKA.");
         db.matchesPlayed++;
         posTypes.forEach(pos => { let p = db.players.find(x=>x.id===db.lineup[pos]); if(p) p.energy=Math.max(0, p.energy-15); });
         save(); showScr('match');
@@ -248,7 +265,7 @@
 
     function openPack(type) {
         let cost = {bronze:5000, silver:10000, gold:15000}[type];
-        if(db.money < cost) return alert("Málo peněz!");
+        if(db.money < cost) { alert("Nemáš peníze!"); return; }
         db.money -= cost;
         document.getElementById('pack-overlay').style.display = 'flex';
         document.getElementById('btn-pack-close').style.display = 'none';
@@ -264,7 +281,7 @@
             ltr.innerText = "";
             document.getElementById('pack-result').innerHTML = `<div class="card" style="background:#fff; color:#000"><h2>LVL ${window.tempP.stat}</h2><p>${window.tempP.name}</p><p>${window.tempP.pos}</p>${window.tempD>0?`<b style="color:green">+${window.tempD} Drinky</b>`:''}</div>`;
             document.getElementById('btn-pack-close').style.display = 'block';
-        }, 2000);
+        }, 1800);
     }
 
     function closePack() {
@@ -287,27 +304,26 @@
 
     function useItem(i) {
         if(!db.bag[i]) return;
-        let t = prompt("Komu dát drink? (Celé jméno)");
+        let t = prompt("Jméno hráče:");
         let p = db.players.find(x => x.name.toLowerCase() === (t||"").toLowerCase());
         if(p) { p.energy = 100; p.sleepUntil=0; db.bag[i].count--; if(db.bag[i].count<=0) db.bag[i]=null; save(); renderBag(); }
     }
 
     function renderLeague() {
         const b = document.getElementById('league-table'); b.innerHTML = "";
-        db.league.sort((a,b)=>b.p-a.p).forEach(t => {
+        let sorted = [...db.league].sort((a,b)=>b.p - a.p);
+        sorted.forEach(t => {
             b.innerHTML += `<tr style="${t.isPlayer?'color:var(--accent)':''}"><td>${t.n}</td><td>LVL ${t.a}</td><td>${t.p} b.</td></tr>`;
         });
     }
 
     window.onload = () => {
-        let s = localStorage.getItem('fb_v6_6');
+        let s = localStorage.getItem('fb_v6_7');
         if(s) { 
             db = JSON.parse(s);
-            // Záchranná oprava pro stará data
-            if(!db.lineup) db.lineup = {LW:null, C:null, RW:null, LD:null, RD:null};
             document.getElementById('scr-reg').style.display='none';
-            document.getElementById('bot-nav').style.display='flex';
             document.getElementById('top-ui').style.display='flex';
+            document.getElementById('bot-nav').style.display='flex';
             showScr('match');
         }
         setInterval(updateUI, 1000);
