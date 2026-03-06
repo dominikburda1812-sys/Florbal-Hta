@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager | Version 6.4 Gold</title>
+    <title>Floorball Manager | Version 6.5 Lineup Edition</title>
     <style>
         :root { --accent: #fbbf24; --bg: #05070a; --glass: rgba(15, 20, 30, 0.95); }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; margin: 0; overflow: hidden; }
@@ -15,23 +15,29 @@
         .active { display: block; animation: fadeIn 0.2s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .header { font-size: 1.3rem; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; border-left: 4px solid var(--accent); padding-left: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .header { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; border-left: 4px solid var(--accent); padding-left: 15px; display: flex; justify-content: space-between; align-items: center; }
         .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+
+        /* FIELD UI */
+        .field { width: 100%; height: 260px; background: #064e3b; border: 2px solid #059669; border-radius: 15px; position: relative; margin-bottom: 15px; }
+        .pos-btn { position: absolute; width: 50px; height: 50px; border-radius: 50%; border: 2px dashed #aaa; background: rgba(0,0,0,0.3); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.6rem; cursor: pointer; }
+        .pos-btn.filled { border: 2px solid var(--accent); background: rgba(251, 191, 36, 0.2); }
+        
+        #p-LW { top: 20%; left: 10%; } #p-C { top: 10%; left: 43%; } #p-RW { top: 20%; right: 10%; }
+        #p-LD { bottom: 15%; left: 20%; } #p-RD { bottom: 15%; right: 20%; }
 
         /* BATOH 5x4 */
         .bag-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; }
         .slot { aspect-ratio: 1; background: rgba(255,255,255,0.05); border: 1px dashed #333; border-radius: 5px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.2rem; }
         .stack { position: absolute; bottom: 1px; right: 2px; font-size: 0.6rem; color: var(--accent); font-weight: bold; }
 
-        /* SIMULACE */
-        .match-box { width: 100%; height: 180px; background: #064e3b; border-radius: 12px; position: relative; margin-bottom: 15px; display: none; overflow: hidden; border: 2px solid #059669; }
-        .scoreboard { position: absolute; top: 0; width: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; padding: 5px 0; font-weight: 900; z-index: 10; font-size: 1.2rem; }
+        /* MATCH BOX */
+        .match-box { width: 100%; height: 160px; background: #064e3b; border-radius: 12px; position: relative; margin-bottom: 15px; display: none; overflow: hidden; border: 2px solid #059669; }
+        .scoreboard { position: absolute; top: 0; width: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; padding: 5px 0; font-weight: 900; z-index: 10; font-size: 1.1rem; }
         
-        /* BALÍČEK ANIMACE */
+        /* PACK ANIMATION */
         #pack-overlay { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .reveal-card { width: 200px; height: 280px; background: #fff; border: 6px solid var(--accent); border-radius: 15px; color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.5s; }
-        
-        /* PROGRESS BAR */
+
         .pb-bg { width: 100%; height: 6px; background: #222; border-radius: 3px; margin: 8px 0; overflow: hidden; }
         .pb-fill { height: 100%; transition: width 0.5s; }
 
@@ -49,14 +55,14 @@
     <div id="top-ui" class="top-nav" style="display:none">
         <div align="center">🪙 <span class="stat-val" id="m-money">0</span></div>
         <div align="center">LVL TÝMU <span class="stat-val" id="m-avg">1</span></div>
-        <div align="center">STATUS <span class="stat-val" id="m-status">OK</span></div>
+        <div align="center">LIGA <span class="stat-val" id="m-league-status">8 LVL</span></div>
     </div>
 
     <div id="scr-reg" class="screen active">
-        <div class="header">Nový Klub</div>
+        <div class="header">Registrace</div>
         <div class="card">
             <input type="text" id="reg-team" placeholder="Název týmu..." style="width:100%; padding:12px; background:#111; border:1px solid #333; color:#fff; border-radius:8px; margin-bottom:15px; box-sizing:border-box;">
-            <button onclick="initGame()">Zahájit Kariéru</button>
+            <button onclick="initGame()">Vytvořit Klub</button>
         </div>
     </div>
 
@@ -67,62 +73,73 @@
             <canvas id="match-canvas"></canvas>
         </div>
         <button id="btn-match-start" onclick="startMatch()">ODEHRÁT ZÁPAS</button>
-        <div class="card" style="margin-top:10px;"><table style="width:100%; font-size:0.9rem;"><tbody id="league-table"></tbody></table></div>
+        <div class="card"><table style="width:100%; font-size:0.85rem;"><tbody id="league-table"></tbody></table></div>
     </div>
 
     <div id="scr-sleep" class="screen">
-        <div class="header">Kabina <button class="btn-small" onclick="selectTopSix()">TOP 6</button></div>
+        <div class="header">Kabina <button class="btn-small" onclick="selectTopSix()">AUTO TOP 6</button></div>
         <div id="sleep-list"></div>
     </div>
 
-    <div id="scr-shop" class="screen">
-        <div class="header">Obchod</div>
-        <div class="card" onclick="openPack('bronze')">BRONZOVÝ (1-9 LVL) <span style="float:right">5k 🪙</span></div>
-        <div class="card" onclick="openPack('silver')">STŘÍBRNÝ (10-19 LVL) <span style="float:right">10k 🪙</span></div>
-        <div class="card" onclick="openPack('gold')">ZLATÝ (20-29 LVL) <span style="float:right">15k 🪙</span></div>
+    <div id="scr-profile" class="screen">
+        <div class="header">Sestava & Batoh</div>
+        <div class="field" id="tactical-field">
+            <div class="pos-btn" id="p-LW" onclick="pickPos('LW')">LW<br><span style="font-size:0.5rem">-</span></div>
+            <div class="pos-btn" id="p-C" onclick="pickPos('C')">C<br><span style="font-size:0.5rem">-</span></div>
+            <div class="pos-btn" id="p-RW" onclick="pickPos('RW')">RW<br><span style="font-size:0.5rem">-</span></div>
+            <div class="pos-btn" id="p-LD" onclick="pickPos('LD')">LD<br><span style="font-size:0.5rem">-</span></div>
+            <div class="pos-btn" id="p-RD" onclick="pickPos('RD')">RD<br><span style="font-size:0.5rem">-</span></div>
+        </div>
+        <div id="selection-list" style="margin-bottom:10px;"></div>
+        <div class="bag-grid" id="bag-grid"></div>
     </div>
 
-    <div id="scr-profile" class="screen">
-        <div class="header">Profil & Batoh</div>
-        <div class="card">
-            <div style="margin-bottom:10px;"><b>Klub:</b> <span id="p-teamname"></span></div>
-            <div class="bag-grid" id="bag-grid"></div>
-        </div>
+    <div id="scr-shop" class="screen">
+        <div class="header">Draft</div>
+        <div class="card" onclick="openPack('bronze')">BRONZ (1-9) <span style="float:right">5k 🪙</span></div>
+        <div class="card" onclick="openPack('silver')">STŘÍBRO (10-19) <span style="float:right">10k 🪙</span></div>
+        <div class="card" onclick="openPack('gold')">GOLD (20-29) <span style="float:right">15k 🪙</span></div>
+    </div>
+
+    <div id="pack-overlay">
+        <div id="pack-letter" style="font-size:6rem; color:var(--accent); font-weight:bold; margin-bottom:10px;">?</div>
+        <div id="pack-result"></div>
+        <button id="btn-pack-close" style="display:none; width:200px;" onclick="closePack()">PŘEVZÍT</button>
     </div>
 
     <div id="bot-nav" class="bottom-nav" style="display:none">
         <div class="nav-item" onclick="showScr('sleep')">🛌</div>
         <div class="nav-item active" onclick="showScr('match')">🥅</div>
+        <div class="nav-item" onclick="showScr('profile')">👤</div>
         <div class="nav-item" onclick="showScr('shop')">📦</div>
-        <div class="nav-item" onclick="showScr('profile')">🎒</div>
-    </div>
-
-    <div id="pack-overlay">
-        <div id="pack-letter" style="font-size:6rem; color:var(--accent); font-weight:bold; margin-bottom:20px;">?</div>
-        <div id="pack-result"></div>
-        <button id="btn-pack-close" style="display:none; width:200px; margin-top:20px;" onclick="closePack()">PŘEVZÍT</button>
     </div>
 
 <script>
     let db = {
         money: 10000, players: [], bag: Array(20).fill(null),
+        lineup: {LW:null, C:null, RW:null, LD:null, RD:null},
         nextMatch: 0, teamName: "", matchesPlayed: 0,
-        league: [{n:"Tatran", a:3, p:0}, {n:"Vítkovice", a:6, p:0}, {n:"Boleslav", a:8, p:0}]
+        league: [{n:"FBC Tábor", a:4, p:0}, {n:"Bulldogs", a:7, p:0}]
     };
 
-    const names = ["Adam","Filip","Jiří","Marek","Jan","Petr"];
-    const surnames = ["Rychlý","Tvrdý","Ostrý","Malý","Novák","Čepice"];
+    const posTypes = ["LW", "C", "RW", "LD", "RD"];
+    const names = ["Petr","Jan","Marek","Filip","Adam","Luky"];
+    const surnames = ["Nový","Rychlý","Tvrdý","Zmrzlý","Hůlka","Mladý"];
+
     function genName() { return names[Math.floor(Math.random()*names.length)] + " " + surnames[Math.floor(Math.random()*surnames.length)]; }
 
     function initGame() {
         db.teamName = document.getElementById('reg-team').value || "Můj Klub";
-        // Start s LVL 1
-        for(let i=0; i<6; i++) db.players.push({name: genName(), stat: 1, energy: 100, id: Date.now()+i, sleepUntil: 0, cooldownUntil: 0, active: true});
+        // Startovních 5 hráčů na pozice s LVL 1
+        posTypes.forEach((pos, i) => {
+            let p = {name: genName(), stat: 1, energy: 100, id: Date.now()+i, pos: pos, sleepUntil: 0, cooldownUntil: 0, active: true};
+            db.players.push(p);
+            db.lineup[pos] = p.id;
+        });
         db.league.push({n: db.teamName, a: 1, p: 0, isPlayer: true});
         document.getElementById('scr-reg').style.display='none';
         document.getElementById('bot-nav').style.display='flex';
         document.getElementById('top-ui').style.display='flex';
-        document.getElementById('p-teamname').innerText = db.teamName;
         save(); showScr('match');
     }
 
@@ -130,156 +147,157 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('scr-' + id).classList.add('active');
-        const map = {sleep:0, match:1, shop:2, profile:3};
+        const map = {sleep:0, match:1, profile:2, shop:3};
         document.querySelectorAll('.nav-item')[map[id]].classList.add('active');
-        if(id==='profile') renderBag();
+        if(id==='profile') { renderField(); renderBag(); }
         if(id==='sleep') renderSleep();
         if(id==='match') renderLeague();
     }
 
+    function renderField() {
+        posTypes.forEach(pos => {
+            const btn = document.getElementById('p-' + pos);
+            const pId = db.lineup[pos];
+            const p = db.players.find(x => x.id === pId);
+            if(p) {
+                btn.classList.add('filled');
+                btn.innerHTML = `${pos}<br><span style="font-size:0.5rem;color:var(--accent)">${p.name[0]}. ${p.stat}</span>`;
+            } else {
+                btn.classList.remove('filled');
+                btn.innerHTML = `${pos}<br><span style="font-size:0.5rem">-</span>`;
+            }
+        });
+        document.getElementById('selection-list').innerHTML = "";
+    }
+
+    function pickPos(pos) {
+        const list = document.getElementById('selection-list');
+        list.innerHTML = `<div class="card"><b>Vyber ${pos}:</b><br>`;
+        const eligible = db.players.filter(p => p.pos === pos);
+        eligible.forEach(p => {
+            list.innerHTML += `<button class="btn-small" onclick="setPos('${pos}', ${p.id})">${p.name} (LVL ${p.stat})</button> `;
+        });
+        list.innerHTML += `<button class="btn-small" style="background:red; color:white;" onclick="setPos('${pos}', null)">ZRUŠIT</button></div>`;
+    }
+
+    function setPos(pos, id) {
+        db.lineup[pos] = id;
+        renderField(); save(); updateUI();
+    }
+
     function updateUI() {
         document.getElementById('m-money').innerText = db.money.toLocaleString();
-        let act = db.players.filter(p => p.active);
-        let avg = act.length ? Math.round(act.reduce((a,b)=>a+b.stat,0)/act.length) : 1;
+        let total = 0; let count = 0;
+        Object.values(db.lineup).forEach(id => {
+            let p = db.players.find(x => x.id === id);
+            if(p) { total += p.stat; count++; }
+        });
+        let avg = count > 0 ? Math.round(total / 5) : 0; // Průměr z pětice
         document.getElementById('m-avg').innerText = avg;
         let pT = db.league.find(t=>t.isPlayer); if(pT) pT.a = avg;
         
         let cd = Math.max(0, Math.ceil((db.nextMatch - Date.now())/1000));
         let btn = document.getElementById('btn-match-start');
-        btn.disabled = cd > 0 || act.length < 6;
-        btn.innerText = cd > 0 ? `ZÁPAS (${cd}s)` : "ODEHRÁT ZÁPAS";
+        btn.disabled = cd > 0 || count < 5;
+        btn.innerText = cd > 0 ? `ČEKÁNÍ (${cd}s)` : "ODEHRÁT ZÁPAS";
+    }
+
+    function doSleep(id) {
+        let p = db.players.find(x => x.id === id);
+        p.sleepUntil = Date.now() + 60000;
+        p.cooldownUntil = Date.now() + 600000;
+        p.energy = 100;
+        renderSleep(); save();
     }
 
     function renderSleep() {
         const list = document.getElementById('sleep-list'); list.innerHTML = "";
         db.players.forEach(p => {
-            let isSleeping = p.sleepUntil > Date.now();
-            let isCD = p.cooldownUntil > Date.now();
-            let canSleep = !isSleeping && !isCD;
-            let timeRem = isSleeping ? Math.ceil((p.sleepUntil - Date.now())/1000) : 0;
-            
-            list.innerHTML += `<div class="card" style="border-left: 4px solid ${p.active?'#fbbf24':'transparent'}">
-                <div style="display:flex; justify-content:space-between"><b>${p.name}</b> <span>LVL ${p.stat}</span></div>
-                <div class="pb-bg"><div class="pb-fill" style="width:${p.energy}%; background:${isSleeping?'#3b82f6':'#22c55e'}"></div></div>
+            let isS = p.sleepUntil > Date.now();
+            let isC = p.cooldownUntil > Date.now();
+            list.innerHTML += `<div class="card">
+                <b>${p.name}</b> (${p.pos}) - LVL ${p.stat}
+                <div class="pb-bg"><div class="pb-fill" style="width:${p.energy}%; background:${isS?'#3b82f6':'#22c55e'}"></div></div>
                 <div style="display:flex; justify-content:space-between; align-items:center">
-                    <small>${isSleeping ? 'Spí: '+timeRem+'s' : 'Energie: '+p.energy+'%'}</small>
-                    ${canSleep ? `<button class="btn-small" style="width:auto" onclick="doSleep(${p.id})">SPÁNEČEK</button>` : 
-                    `<small style="color:gray">${isSleeping?'SPÍ...':'REGENERACE'}</small>`}
+                    <small>${isS ? 'Spí: '+Math.ceil((p.sleepUntil-Date.now())/1000)+'s' : 'Energie: '+p.energy+'%'}</small>
+                    ${(!isS && !isC) ? `<button class="btn-small" style="width:auto" onclick="doSleep(${p.id})">SPÁNEČEK</button>` : `<small style="color:gray">PAUZA</small>`}
                 </div>
             </div>`;
         });
     }
 
-    function doSleep(id) {
-        let p = db.players.find(x => x.id === id);
-        p.sleepUntil = Date.now() + 60000; // 1 min
-        p.cooldownUntil = Date.now() + 600000; // 10 min celkem (1 spánek + 9 pauza)
-        p.energy = 100;
-        renderSleep(); save();
-    }
-
-    // --- ZÁPAS A LOGIKA VÝHER ---
     function startMatch() {
         db.nextMatch = Date.now() + 60000;
         document.getElementById('match-anim').style.display = 'block';
         const canvas = document.getElementById('match-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
-        
-        let h=0, a=0, time=30;
-        let plys = Array(10).fill(0).map(()=>({x: Math.random()*canvas.width, y: Math.random()*canvas.height}));
-
+        let h=0, a=0, t=30;
         let loop = setInterval(() => {
-            time--;
-            if(Math.random()<0.08) { (Math.random()>0.5)?h++:a++; }
-            document.getElementById('score-h').innerText = h;
-            document.getElementById('score-a').innerText = a;
-            if(time <= 0) { clearInterval(loop); finishMatch(h, a); }
+            t--; if(Math.random()<0.08) { (Math.random()>0.5)?h++:a++; }
+            document.getElementById('score-h').innerText = h; document.getElementById('score-a').innerText = a;
+            if(t<=0){ clearInterval(loop); finishMatch(h, a); }
         }, 1000);
-
         function draw() {
             if(document.getElementById('match-anim').style.display==='none') return;
             ctx.clearRect(0,0,canvas.width,canvas.height);
-            ctx.fillStyle="rgba(255,255,255,0.1)"; ctx.fillRect(canvas.width/2-1, 0, 2, canvas.height);
-            plys.forEach((p,i) => {
-                p.x += (Math.random()-0.5)*3; p.y += (Math.random()-0.5)*3;
-                ctx.fillStyle = i < 5 ? "#fbbf24" : "#fff";
-                ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 7); ctx.fill();
-            });
+            ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 4, 0, 7); ctx.fill();
             requestAnimationFrame(draw);
-        }
-        draw();
+        } draw();
     }
 
     function finishMatch(sh, sa) {
         document.getElementById('match-anim').style.display = 'none';
         let pT = db.league.find(t=>t.isPlayer);
-        let opps = db.league.filter(t=>!t.isPlayer);
-        if(pT.a < 10) opps = opps.filter(o => o.a <= 8);
-        let opp = opps[Math.floor(Math.random()*opps.length)];
-
+        let opp = {a: Math.floor(Math.random()*8)+1}; // Náhodný soupeř do lvl 8
+        
         let win = false;
-        if(db.matchesPlayed === 0) {
-            win = true; // První vždy výhra
-        } else {
+        if(db.matchesPlayed === 0) win = true;
+        else {
             let diff = pT.a - opp.a;
-            let prob = 67; // Stejný level
-            if(diff === -8) prob = 1; else if(diff === -7) prob = 5; else if(diff === -6) prob = 10;
-            else if(diff === -5) prob = 15; else if(diff === -4) prob = 20; else if(diff === -3) prob = 25;
-            else if(diff === -2) prob = 30; else if(diff === -1) prob = 50; else if(diff === 1) prob = 75;
-            else if(diff >= 2) prob = 99;
+            let prob = 67;
+            let table = {-8:1, -7:5, -6:10, -5:15, -4:20, -3:25, -2:30, -1:50, 0:67, 1:75};
+            prob = table[diff] || (diff >= 2 ? 99 : 1);
             win = (Math.random()*100 < prob);
         }
 
-        if(win) { db.money += 750; pT.p += 3; alert("VÍTĚZSTVÍ! +750 🪙"); } 
-        else { alert("PROHRA."); }
-        
+        if(win) { db.money += 750; pT.p += 3; alert("VÝHRA!"); } else alert("PROHRA.");
         db.matchesPlayed++;
-        db.players.filter(p=>p.active).forEach(p => p.energy = Math.max(0, p.energy - 15));
+        Object.values(db.lineup).forEach(id => {
+            let p = db.players.find(x=>x.id === id); if(p) p.energy = Math.max(0, p.energy - 15);
+        });
         save(); updateUI(); renderLeague();
     }
 
-    // --- BALÍČKY A BATOH ---
     function openPack(type) {
         let cost = {bronze:5000, silver:10000, gold:15000}[type];
-        if(db.money < cost) return alert("Málo peněz!");
+        if(db.money < cost) return alert("Peníze!");
         db.money -= cost;
-        
         document.getElementById('pack-overlay').style.display = 'flex';
         document.getElementById('btn-pack-close').style.display = 'none';
-        document.getElementById('pack-result').innerHTML = "";
         let ltr = document.getElementById('pack-letter'); ltr.innerText = "?";
-
-        let range = type==='bronze'?[1,9]:type==='silver'?[10,19]:[20,29];
-        let lvl = Math.floor(Math.random()*(range[1]-range[0]+1))+range[0];
-        let pName = genName();
-        window.pendingPlayer = {name: pName, stat: lvl, energy:100, id:Date.now(), sleepUntil:0, cooldownUntil:0, active:false};
         
-        // Energeťáky 50%
-        window.pendingDrinks = (Math.random() < 0.5) ? Math.floor(Math.random()*6) : 0;
+        let range = type==='bronze'?[1,9]:type==='silver'?[10,19]:[20,29];
+        let pName = genName();
+        window.pending = {name: pName, stat: Math.floor(Math.random()*(range[1]-range[0]+1))+range[0], pos: posTypes[Math.floor(Math.random()*5)], energy:100, id:Date.now(), sleepUntil:0, cooldownUntil:0};
+        window.drinks = Math.random()<0.5 ? Math.floor(Math.random()*6) : 0;
 
-        setTimeout(() => ltr.innerText = pName[0], 1000);
-        setTimeout(() => {
+        setTimeout(()=>ltr.innerText = pName[0], 800);
+        setTimeout(()=>{
             ltr.innerText = "";
-            document.getElementById('pack-result').innerHTML = `
-                <div class="reveal-card">
-                    <h1 style="margin:0; font-size:3rem;">${lvl}</h1>
-                    <p>${pName}</p>
-                    ${window.pendingDrinks > 0 ? `<b style="color:green">+${window.pendingDrinks}x Drink</b>` : ''}
-                </div>`;
+            document.getElementById('pack-result').innerHTML = `<div style="background:#fff; color:#000; padding:20px; border-radius:10px;">
+                <h2>LVL ${window.pending.stat}</h2><p>${window.pending.name}</p><p>POZICE: ${window.pending.pos}</p>
+                ${window.drinks>0?`<b>+${window.drinks}x Drink</b>`:''}</div>`;
             document.getElementById('btn-pack-close').style.display = 'block';
-        }, 2500);
+        }, 2000);
     }
 
     function closePack() {
-        db.players.push(window.pendingPlayer);
-        if(window.pendingDrinks > 0) {
+        db.players.push(window.pending);
+        if(window.drinks > 0) {
             let slot = db.bag.find(s => s && s.type==='drink' && s.count < 10);
-            if(slot) slot.count = Math.min(10, slot.count + window.pendingDrinks);
-            else {
-                let empty = db.bag.findIndex(s => s === null);
-                if(empty !== -1) db.bag[empty] = {type:'drink', count: window.pendingDrinks};
-            }
+            if(slot) slot.count = Math.min(10, slot.count + window.drinks);
+            else { let empty = db.bag.findIndex(s=>s===null); if(empty!==-1) db.bag[empty] = {type:'drink', count:window.drinks}; }
         }
         document.getElementById('pack-overlay').style.display = 'none';
         save(); updateUI();
@@ -288,28 +306,15 @@
     function renderBag() {
         const grid = document.getElementById('bag-grid'); grid.innerHTML = "";
         db.bag.forEach((item, i) => {
-            grid.innerHTML += `<div class="slot" onclick="useItem(${i})">${item?'🥤':''} ${item?`<span class="stack">x${item.count}</span>`:''}</div>`;
+            grid.innerHTML += `<div class="slot" onclick="useDrink(${i})">${item?'🥤':''} ${item?`<span class="stack">x${item.count}</span>`:''}</div>`;
         });
     }
 
-    function useItem(i) {
+    function useDrink(i) {
         if(!db.bag[i]) return;
-        let target = prompt("Komu dát drink? (Jméno)");
-        let p = db.players.find(x => x.name.toLowerCase() === (target||"").toLowerCase());
-        if(p) { 
-            p.energy = 100; p.sleepUntil = 0;
-            db.bag[i].count--; if(db.bag[i].count <= 0) db.bag[i] = null;
-            save(); renderBag();
-        }
-    }
-
-    function selectTopSix() {
-        db.players.forEach(p => p.active = false);
-        let sorted = [...db.players].sort((a,b)=>b.stat - a.stat);
-        for(let i=0; i<Math.min(6, sorted.length); i++) {
-            db.players.find(x=>x.id === sorted[i].id).active = true;
-        }
-        renderSleep(); save(); updateUI();
+        let t = prompt("Jméno hráče:");
+        let p = db.players.find(x => x.name.toLowerCase() === (t||"").toLowerCase());
+        if(p) { p.energy = 100; p.sleepUntil=0; db.bag[i].count--; if(db.bag[i].count<=0) db.bag[i]=null; save(); renderBag(); }
     }
 
     function renderLeague() {
@@ -319,17 +324,10 @@
         });
     }
 
-    function save() { localStorage.setItem('fb_v6_4_gold', JSON.stringify(db)); }
+    function save() { localStorage.setItem('fb_v6_5', JSON.stringify(db)); }
     window.onload = () => {
-        let s = localStorage.getItem('fb_v6_4_gold');
-        if(s) { 
-            db = JSON.parse(s); 
-            document.getElementById('scr-reg').style.display='none'; 
-            document.getElementById('bot-nav').style.display='flex'; 
-            document.getElementById('top-ui').style.display='flex';
-            document.getElementById('p-teamname').innerText = db.teamName;
-            showScr('match'); 
-        }
+        let s = localStorage.getItem('fb_v6_5');
+        if(s) { db = JSON.parse(s); document.getElementById('scr-reg').style.display='none'; document.getElementById('bot-nav').style.display='flex'; document.getElementById('top-ui').style.display='flex'; showScr('match'); }
         setInterval(updateUI, 1000);
         setInterval(() => { if(document.querySelector('#scr-sleep.active')) renderSleep(); }, 1000);
     };
