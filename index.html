@@ -9,31 +9,31 @@
             --accent: #fbbf24; --bg: #0a0e14; --card: #151a21; 
             --text: #e2e8f0; --danger: #ef4444; --warning: #f59e0b; --success: #22c55e;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; overflow-x: hidden; }
         
-        /* Top Navigation with player count */
         #top-ui { 
             display: none; background: #0f131a; padding: 15px; border-bottom: 1px solid #333; 
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;
         }
-        .stat-group { display: flex; gap: 15px; font-size: 0.9rem; }
-
-        .screen { display: none; padding: 20px; padding-bottom: 120px; }
+        
+        .screen { display: none; padding: 20px; padding-bottom: 100px; }
         .active { display: block; }
 
         .card { background: var(--card); border: 1px solid #2d3748; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
-        
-        /* Energy Bar Styling */
-        .energy-wrapper { height: 8px; background: #2d3748; border-radius: 4px; overflow: hidden; margin: 8px 0; }
-        .energy-fill { height: 100%; transition: width 0.6s ease, background-color 0.6s ease; }
-
         button { 
             background: linear-gradient(135deg, var(--accent), #d97706); border: none; color: #000;
-            padding: 14px; border-radius: 12px; font-weight: 700; width: 100%; cursor: pointer; transition: transform 0.2s;
+            padding: 14px; border-radius: 12px; font-weight: 800; width: 100%; cursor: pointer; text-transform: uppercase;
         }
-        button:active { transform: scale(0.98); }
 
-        #bot-nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: #0f131a; display: none; justify-content: space-around; align-items: center; border-top: 1px solid #333; }
+        /* Energy Bar */
+        .energy-bar { height: 8px; background: #2d3748; border-radius: 4px; margin-top: 8px; overflow: hidden; }
+        .energy-fill { height: 100%; transition: width 0.6s ease, background-color 0.6s ease; }
+
+        /* Field */
+        .field { width: 100%; height: 220px; background: #064e3b; border-radius: 16px; position: relative; margin: 15px 0; border: 2px solid #059669; }
+        .pos-btn { position: absolute; width: 45px; height: 45px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
+        
+        #bot-nav { display: none; position: fixed; bottom: 0; width: 100%; height: 70px; background: #0f131a; border-top: 1px solid #333; display: flex; justify-content: space-around; align-items: center; }
         .nav-item { font-size: 1.4rem; opacity: 0.5; }
         .nav-item.active { opacity: 1; color: var(--accent); }
     </style>
@@ -41,44 +41,41 @@
 <body>
 
     <div id="top-ui">
-        <div class="stat-group">
+        <div style="display:flex; gap:15px;">
             <div>🪙 <span id="ui-money" style="color:var(--accent); font-weight:bold;">0</span></div>
             <div>LVL: <span id="ui-lvl" style="color:var(--accent); font-weight:bold;">0</span></div>
         </div>
-        <div style="font-size: 0.8rem;">Hráči: <span id="ui-count" style="color:var(--accent); font-weight:bold;">0</span></div>
+        <div>Hráči: <span id="ui-count" style="color:var(--accent); font-weight:bold;">0</span></div>
     </div>
 
-    <div id="scr-match" class="screen active">
-        <div class="card" style="text-align:center;">
-            <h3>DALŠÍ ZÁPAS</h3>
-            <button onclick="playMatch()">START ZÁPASU</button>
-        </div>
-        <div id="liga-tabulka"></div>
-    </div>
-
-    <div id="bot-nav">
-        <div class="nav-item" onclick="prepni('sleep')">🛌</div>
-        <div class="nav-item active" onclick="prepni('match')">🥅</div>
-        <div class="nav-item" onclick="prepni('profile')">👤</div>
-        <div class="nav-item" onclick="prepni('shop')">📦</div>
+    <div id="scr-sleep" class="screen">
+        <h3>KABINA</h3>
+        <div id="hraci-list"></div>
     </div>
 
 <script>
-    // Logika energy baru s barvami
-    function updateEnergyUI(h) {
-        let bar = document.getElementById('e-fill-' + h.id);
-        if(!bar) return;
-        bar.style.width = h.e + '%';
-        if(h.e < 30) bar.style.backgroundColor = 'var(--danger)';
-        else if(h.e < 70) bar.style.backgroundColor = 'var(--warning)';
-        else bar.style.backgroundColor = 'var(--success)';
+    function renderSleep() {
+        let div = document.getElementById('hraci-list');
+        div.innerHTML = "";
+        db.p.forEach(h => {
+            let color = h.e < 30 ? 'var(--danger)' : (h.e < 70 ? 'var(--warning)' : 'var(--success)');
+            div.innerHTML += `
+            <div class="card">
+                <b>${h.n}</b> (${h.pos}) - Lvl ${h.lvl}
+                <div class="energy-bar">
+                    <div class="energy-fill" style="width:${h.e}%; background-color:${color}"></div>
+                </div>
+                <small>${h.e}% energie</small>
+            </div>`;
+        });
     }
 
-    // Aktualizace počtu hráčů v horní liště
     function updateUI() {
-        document.getElementById('ui-count').innerText = db.p.length;
+        document.getElementById('ui-money').innerText = db.m.toLocaleString();
+        document.getElementById('ui-count').innerText = db.p.length; // Čítač hráčů
         // ... zbytek logiky
     }
+    // ... ostatní funkce zůstávají stejné
 </script>
 </body>
 </html>
