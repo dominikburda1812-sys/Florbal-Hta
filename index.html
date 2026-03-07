@@ -3,223 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager v6.9 - EMERGENCY FIX</title>
+    <title>Floorball Manager v7.0</title>
     <style>
-        :root { --accent: #fbbf24; --bg: #05070a; }
-        body { font-family: sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 0; }
+        :root { --accent: #fbbf24; --bg: #05070a; --field: #064e3b; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; margin: 0; overflow-x: hidden; }
         
-        /* Layout */
         #top-ui { display: none; background: #111; padding: 10px; justify-content: space-around; border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 100; }
-        .screen { display: none; padding: 20px; padding-bottom: 100px; }
-        #scr-reg { display: block; } /* Startovní obrazovka je vidět vždy jako první */
-        
-        /* UI Prvky */
-        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
-        button { background: var(--accent); color: #000; border: none; padding: 15px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase; }
-        button:disabled { background: #444; color: #888; }
-        
-        /* Hřiště */
-        .field { width: 100%; height: 220px; background: #064e3b; border: 2px solid #059669; border-radius: 15px; position: relative; margin: 10px 0; }
-        .pos-btn { position: absolute; width: 45px; height: 45px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; cursor: pointer; }
-        #p-LW { top: 15%; left: 10%; } #p-C { top: 10%; left: 43%; } #p-RW { top: 15%; right: 10%; }
+        .stat-val { color: var(--accent); font-weight: bold; }
+
+        .screen { display: none; padding: 15px; padding-bottom: 100px; box-sizing: border-box; min-height: 100vh; }
+        .active { display: block; }
+
+        .card { background: #161a1d; border: 1px solid #333; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+        button { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 800; width: 100%; cursor: pointer; }
+        button:disabled { background: #333; color: #666; }
+
+        /* FIELD */
+        .field { width: 100%; height: 220px; background: var(--field); border: 2px solid #059669; border-radius: 15px; position: relative; margin: 10px 0; }
+        .pos-btn { position: absolute; width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,0.6); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
+        #p-LW { top: 20%; left: 10%; } #p-C { top: 10%; left: 43%; } #p-RW { top: 20%; right: 10%; }
         #p-LD { bottom: 15%; left: 20%; } #p-RD { bottom: 15%; right: 20%; }
 
-        /* Navigace */
-        #bot-nav { display: none; position: fixed; bottom: 0; width: 100%; height: 70px; background: #111; justify-content: space-around; align-items: center; border-top: 1px solid #333; }
-        .nav-item { font-size: 1.5rem; cursor: pointer; opacity: 0.5; }
+        /* MATCH ANIMATION */
+        .match-box { width: 100%; height: 180px; background: var(--field); border-radius: 12px; position: relative; overflow: hidden; border: 2px solid #059669; display: none; }
+        .goal { position: absolute; width: 10px; height: 40px; background: #fff; top: 70px; border: 1px solid #999; }
+        .ball { position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; box-shadow: 0 0 5px #fff; }
+        .player-dot { position: absolute; width: 12px; height: 12px; border-radius: 50%; transition: all 0.5s linear; }
+
+        /* INVENTORY */
+        .bag-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
+        .slot { aspect-ratio: 1; background: #111; border: 1px solid #333; border-radius: 5px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.2rem; }
+        .stack-count { position: absolute; bottom: 2px; right: 2px; font-size: 0.6rem; color: var(--accent); }
+
+        /* PACKS */
+        #pack-overlay { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        
+        /* NAV */
+        #bot-nav { display: none; position: fixed; bottom: 0; width: 100%; height: 65px; background: #111; justify-content: space-around; align-items: center; border-top: 1px solid #333; }
+        .nav-item { font-size: 1.5rem; opacity: 0.4; transition: 0.3s; }
         .nav-item.active { opacity: 1; color: var(--accent); }
 
-        input { width: 100%; padding: 15px; margin-bottom: 15px; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        td { padding: 8px; border-bottom: 1px solid #222; }
+        .energy-bar { height: 4px; background: #333; border-radius: 2px; margin-top: 4px; overflow: hidden; }
+        .energy-fill { height: 100%; background: #22c55e; transition: width 0.5s; }
     </style>
 </head>
 <body>
 
     <div id="top-ui">
-        <div>🪙 <span id="m-money">0</span></div>
-        <div>TÝM LVL: <span id="m-lvl">0</span></div>
-        <div onclick="localStorage.clear(); location.reload();" style="color:red; font-size:0.6rem;">RESET</div>
+        <div>🪙 <span id="ui-money" class="stat-val">0</span></div>
+        <div>TEAM LVL: <span id="ui-lvl" class="stat-val">0</span></div>
     </div>
 
-    <div id="scr-reg" class="screen">
-        <h2>FLORBALOVÝ MANAŽER</h2>
+    <div id="scr-reg" class="screen active">
+        <h2>FLORBALOVÝ MANAŽER v7.0</h2>
         <div class="card">
-            <input type="text" id="team-name" placeholder="Název tvého týmu...">
-            <button onclick="startHry()">ZALOŽIT KLUB A HRÁT</button>
+            <input type="text" id="in-team" placeholder="Název klubu..." style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:8px; box-sizing:border-box; margin-bottom:15px;">
+            <button onclick="initGame()">ZALOŽIT KLUB</button>
         </div>
     </div>
 
     <div id="scr-match" class="screen">
-        <h3>ZÁPAS</h3>
-        <div id="match-info" class="card" style="display:none; text-align:center; background:#064e3b;">
-            <h2 id="live-score">0 : 0</h2>
-            <p>Probíhá zápas...</p>
+        <button onclick="prepni('profile')" style="margin-bottom:10px; background:#333; color:#fff;">🛡️ SESTAVA</button>
+        <div id="match-area" class="match-box">
+            <div class="goal" style="left:0"></div>
+            <div class="goal" style="right:0"></div>
+            <div id="m-ball" class="ball"></div>
+            <div id="p-dots"></div>
+            <div style="position:absolute; top:5px; width:100%; text-align:center; font-weight:bold; font-size:1.2rem;">
+                <span id="score-h">0</span> : <span id="score-a">0</span>
+            </div>
         </div>
-        <button id="btn-match" onclick="hrajZapas()">ODEHRÁT ZÁPAS</button>
-        <div class="card">
+        <button id="btn-play" onclick="playMatch()" style="margin-top:10px;">HRÁT ZÁPAS</button>
+        <div class="card" style="margin-top:15px;">
             <h4>TABULKA LIGY</h4>
-            <div id="div-liga"></div>
+            <div id="liga-tabulka"></div>
         </div>
     </div>
 
     <div id="scr-sleep" class="screen">
-        <h3>KABINA</h3>
-        <div id="div-hraci"></div>
+        <h3>KABINA (ENERGIE)</h3>
+        <div id="hraci-list"></div>
     </div>
 
     <div id="scr-profile" class="screen">
-        <h3>SESTAVA</h3>
         <div class="field">
-            <div id="p-LW" class="pos-btn" onclick="vyber('LW')">LW</div>
-            <div id="p-C" class="pos-btn" onclick="vyber('C')">C</div>
-            <div id="p-RW" class="pos-btn" onclick="vyber('RW')">RW</div>
-            <div id="p-LD" class="pos-btn" onclick="vyber('LD')">LD</div>
-            <div id="p-RD" class="pos-btn" onclick="vyber('RD')">RD</div>
+            <div id="p-LW" class="pos-btn" onclick="openSelect('LW')">LW</div>
+            <div id="p-C" class="pos-btn" onclick="openSelect('C')">C</div>
+            <div id="p-RW" class="pos-btn" onclick="openSelect('RW')">RW</div>
+            <div id="p-LD" class="pos-btn" onclick="openSelect('LD')">LD</div>
+            <div id="p-RD" class="pos-btn" onclick="openSelect('RD')">RD</div>
         </div>
-        <div id="vyber-hracu"></div>
+        <div id="select-box"></div>
+        <h4>BATOH (4×5)</h4>
+        <div class="bag-grid" id="bag-ui"></div>
+    </div>
+
+    <div id="scr-shop" class="screen">
+        <h3>DRAFT BALÍČKY</h3>
+        <div class="card">
+            <button onclick="buyPack('bronz')">BRONZ (1-9 LVL) - 5 000 🪙</button>
+            <button onclick="buyPack('silver')" style="margin-top:10px;">STŘÍBRO (10-19 LVL) - 10 000 🪙</button>
+            <button onclick="buyPack('gold')" style="margin-top:10px;">GOLD (20-29 LVL) - 15 000 🪙</button>
+        </div>
+    </div>
+
+    <div id="pack-overlay">
+        <div id="pack-anim-text" style="font-size:4rem; color:var(--accent); font-weight:900;">?</div>
+        <div id="pack-info" style="margin:20px 0; font-size:1.2rem;"></div>
+        <button id="pack-close" style="display:none; width:200px" onclick="closePack()">PŘEVZÍT</button>
     </div>
 
     <div id="bot-nav">
         <div class="nav-item" onclick="prepni('sleep')">🛌</div>
-        <div class="nav-item" onclick="prepni('match')">🥅</div>
+        <div class="nav-item active" onclick="prepni('match')">🥅</div>
         <div class="nav-item" onclick="prepni('profile')">👤</div>
+        <div class="nav-item" onclick="prepni('shop')">📦</div>
     </div>
 
 <script>
-    let hra = {
-        penize: 10000,
-        hraci: [],
-        sestava: {LW:null, C:null, RW:null, LD:null, RD:null},
-        nazevTymu: "",
-        liga: [{n:"Tatran", p:0, lvl:5}, {n:"Vítkovice", p:0, lvl:7}]
+    let db = {
+        m: 10000, p: [], b: Array(20).fill(null),
+        lineup: {LW:null, C:null, RW:null, LD:null, RD:null},
+        name: "", matches: 0,
+        league: [{n:"Tatran", lvl:5, pts:0}, {n:"Vítkovice", lvl:8, pts:0}]
     };
 
+    const names = ["Petr","Filip","Marek","Honza","Adam","Lukáš"];
+    const sNames = ["Rychlý","Tvrdý","Ostrý","Modrý","Nový","Malý"];
+
+    function save() { localStorage.setItem('fb_v7', JSON.stringify(db)); }
+
     function prepni(id) {
-        let screens = document.getElementsByClassName('screen');
-        for(let s of screens) s.style.display = 'none';
-        document.getElementById('scr-' + id).style.display = 'block';
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('scr-' + id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        const navMap = {sleep:0, match:1, profile:2, shop:3};
+        document.querySelectorAll('.nav-item')[navMap[id]].classList.add('active');
         
-        if(id === 'match') vykresliLigu();
-        if(id === 'sleep') vykresliHraci();
-        if(id === 'profile') vykresliSestavu();
-        aktualizujUI();
+        if(id==='profile') { renderField(); renderBag(); }
+        if(id==='sleep') renderSleep();
+        if(id==='match') renderLeague();
+        updateUI();
     }
 
-    function startHry() {
-        let n = document.getElementById('team-name').value;
-        if(!n) { alert("Zadej jméno!"); return; }
-
-        hra.nazevTymu = n;
-        // Vytvořit 5 základních hráčů
-        let pozice = ["LW","C","RW","LD","RD"];
-        pozice.forEach((pos, i) => {
-            let h = {id: Date.now()+i, jmeno: "Hráč " + (i+1), lvl: 1, pos: pos, energie: 100};
-            hra.hraci.push(h);
-            hra.sestava[pos] = h.id;
+    function initGame() {
+        let n = document.getElementById('in-team').value;
+        if(!n) return alert("Zadej název!");
+        db.name = n;
+        ["LW","C","RW","LD","RD"].forEach((pos, i) => {
+            let h = {id: Date.now()+i, n: names[i%names.length]+" "+sNames[i%sNames.length], lvl: 1, pos: pos, e: 100};
+            db.p.push(h);
+            db.lineup[pos] = h.id;
         });
-        hra.liga.push({n: n, p: 0, lvl: 1, isP: true});
-
+        db.league.push({n: n, lvl: 1, pts: 0, isP: true});
+        document.getElementById('scr-reg').classList.remove('active');
         document.getElementById('top-ui').style.display = 'flex';
         document.getElementById('bot-nav').style.display = 'flex';
         prepni('match');
-        uloz();
+        save();
     }
 
-    function aktualizujUI() {
-        document.getElementById('m-money').innerText = hra.penize;
-        let soucet = 0;
-        let count = 0;
-        for(let p in hra.sestava) {
-            let h = hra.hraci.find(x => x.id === hra.sestava[p]);
-            if(h) { soucet += h.lvl; count++; }
+    function updateUI() {
+        document.getElementById('ui-money').innerText = db.m.toLocaleString();
+        let total = 0, count = 0;
+        for(let pos in db.lineup) {
+            let h = db.p.find(x => x.id === db.lineup[pos]);
+            if(h) { total += h.lvl; count++; }
         }
-        let prumer = count === 5 ? Math.round(soucet/5) : 0;
-        document.getElementById('m-lvl').innerText = prumer;
-        
-        let pT = hra.liga.find(x => x.isP);
-        if(pT) pT.lvl = prumer;
-
-        let btn = document.getElementById('btn-match');
-        if(btn) btn.disabled = (count < 5);
+        let avg = count === 5 ? Math.round(total/5) : 0;
+        document.getElementById('ui-lvl').innerText = avg;
+        let pT = db.league.find(x => x.isP); if(pT) pT.lvl = avg;
+        document.getElementById('btn-play').disabled = (count < 5);
     }
 
-    function vykresliSestavu() {
-        for(let p in hra.sestava) {
-            let h = hra.hraci.find(x => x.id === hra.sestava[p]);
-            let el = document.getElementById('p-' + p);
-            el.innerHTML = h ? h.lvl : p;
-            el.style.background = h ? "var(--accent)" : "rgba(0,0,0,0.5)";
-            el.style.color = h ? "#000" : "#fff";
+    function renderField() {
+        for(let pos in db.lineup) {
+            let h = db.p.find(x => x.id === db.lineup[pos]);
+            let el = document.getElementById('p-' + pos);
+            el.innerHTML = h ? h.lvl : pos;
+            el.style.borderColor = h ? "var(--accent)" : "#fff";
         }
+        document.getElementById('select-box').innerHTML = "";
     }
 
-    function vyber(pos) {
-        let div = document.getElementById('vyber-hracu');
-        div.innerHTML = "<h4>Vyber pro " + pos + ":</h4>";
-        hra.hraci.filter(x => x.pos === pos).forEach(h => {
-            div.innerHTML += `<div class="card" onclick="nastavHrace('${pos}', ${h.id})">${h.jmeno} (LVL ${h.lvl})</div>`;
+    function openSelect(pos) {
+        let div = document.getElementById('select-box');
+        div.innerHTML = `<div class="card"><h4>Vyber ${pos}:</h4>`;
+        db.p.filter(x => x.pos === pos).forEach(h => {
+            div.innerHTML += `<button onclick="setPos('${pos}', ${h.id})" style="margin:2px 0; background:#333; color:#fff;">${h.n} (LVL ${h.lvl})</button>`;
+        });
+        div.innerHTML += `</div>`;
+    }
+
+    function setPos(pos, id) {
+        db.lineup[pos] = id;
+        renderField(); updateUI(); save();
+    }
+
+    function renderSleep() {
+        let div = document.getElementById('hraci-list');
+        div.innerHTML = "";
+        db.p.forEach(h => {
+            div.innerHTML += `<div class="card">
+                <b>${h.n}</b> (${h.pos}) | LVL ${h.lvl}
+                <div class="energy-bar"><div class="energy-fill" style="width:${h.e}%; background:${h.e<30?'#ef4444':'#22c55e'}"></div></div>
+                <small>Energie: ${h.e}%</small>
+            </div>`;
         });
     }
 
-    function nastavHrace(pos, id) {
-        hra.sestava[pos] = id;
-        vykresliSestavu();
-        document.getElementById('vyber-hracu').innerHTML = "";
-        aktualizujUI();
-        uloz();
-    }
-
-    function hrajZapas() {
-        document.getElementById('match-info').style.display = 'block';
-        document.getElementById('btn-match').style.display = 'none';
-        let s1 = 0; let s2 = 0;
-        let cas = 0;
-        let int = setInterval(() => {
-            cas++;
-            if(Math.random() < 0.1) s1++;
-            if(Math.random() < 0.1) s2++;
-            document.getElementById('live-score').innerText = s1 + " : " + s2;
-            if(cas > 10) {
-                clearInterval(int);
-                let pT = hra.liga.find(x => x.isP);
-                if(s1 >= s2) { pT.p += 3; hra.penize += 1000; alert("VÝHRA! +1000 🪙"); }
-                else { alert("PROHRA"); }
-                document.getElementById('match-info').style.display = 'none';
-                document.getElementById('btn-match').style.display = 'block';
-                uloz();
-                vykresliLigu();
-            }
-        }, 500);
-    }
-
-    function vykresliLigu() {
-        let div = document.getElementById('div-liga');
+    function renderLeague() {
+        let div = document.getElementById('liga-tabulka');
         let html = "<table>";
-        hra.liga.sort((a,b) => b.p - a.p).forEach(t => {
-            html += `<tr style="${t.isP ? 'color:var(--accent)' : ''}"><td>${t.n}</td><td>${t.p} b.</td></tr>`;
+        db.league.sort((a,b) => b.pts - a.pts).forEach(t => {
+            html += `<tr style="${t.isP?'color:var(--accent)':''}"><td>${t.n}</td><td>LVL ${t.lvl}</td><td>${t.pts} b.</td></tr>`;
         });
         div.innerHTML = html + "</table>";
     }
 
-    function vykresliHraci() {
-        let div = document.getElementById('div-hraci');
-        div.innerHTML = "";
-        hra.hraci.forEach(h => {
-            div.innerHTML += `<div class="card">${h.jmeno} (${h.pos}) - LVL ${h.lvl}</div>`;
+    function playMatch() {
+        document.getElementById('match-area').style.display = 'block';
+        document.getElementById('btn-play').style.display = 'none';
+        let sh = 0, sa = 0, timer = 0;
+        
+        // Animace hráčů a míčku
+        const ball = document.getElementById('m-ball');
+        let matchInt = setInterval(() => {
+            timer++;
+            ball.style.left = Math.random()*90 + "%";
+            ball.style.top = Math.random()*80 + "%";
+            if(Math.random()<0.1) Math.random()>0.5 ? sh++ : sa++;
+            document.getElementById('score-h').innerText = sh;
+            document.getElementById('score-a').innerText = sa;
+
+            if(timer > 15) {
+                clearInterval(matchInt);
+                finishMatch(sh, sa);
+            }
+        }, 500);
+    }
+
+    function finishMatch(sh, sa) {
+        let pT = db.league.find(x => x.isP);
+        let win = false;
+        
+        if(db.matches === 0) win = true;
+        else {
+            let oppLvl = pT.lvl < 10 ? Math.floor(Math.random()*8)+1 : Math.floor(Math.random()*15)+5;
+            let diff = pT.lvl - oppLvl;
+            let probTable = {"-8":1, "-7":5, "-6":10, "-5":15, "-4":20, "-3":25, "-2":30, "-1":50, "0":67, "1":75};
+            let prob = probTable[diff] || (diff >= 2 ? 99 : 1);
+            win = (Math.random()*100 < prob);
+        }
+
+        if(win) { db.m += 1000; pT.pts += 3; alert("VÝHRA! +1000 🪙"); } 
+        else { alert("PROHRA."); }
+
+        db.matches++;
+        // Odečtení energie
+        for(let p in db.lineup) {
+            let h = db.p.find(x => x.id === db.lineup[p]);
+            if(h) h.e = Math.max(0, h.e - (Math.floor(Math.random()*10)+1));
+        }
+
+        document.getElementById('match-area').style.display = 'none';
+        document.getElementById('btn-play').style.display = 'block';
+        save(); renderLeague(); updateUI();
+    }
+
+    function buyPack(type) {
+        let cost = type==='bronz'?5000:type==='silver'?10000:15000;
+        if(db.m < cost) return alert("Nemáš peníze!");
+        db.m -= cost;
+        
+        document.getElementById('pack-overlay').style.display = 'flex';
+        let txt = document.getElementById('pack-anim-text');
+        let info = document.getElementById('pack-info');
+        txt.innerText = "?"; info.innerText = "";
+        
+        let range = type==='bronz'?[1,9]:type==='silver'?[10,19]:[20,29];
+        let hN = names[Math.floor(Math.random()*names.length)] + " " + sNames[Math.floor(Math.random()*sNames.length)];
+        window.tempH = {id: Date.now(), n: hN, lvl: Math.floor(Math.random()*(range[1]-range[0]+1))+range[0], pos: ["LW","C","RW","LD","RD"][Math.floor(Math.random()*5)], e: 100};
+
+        setTimeout(() => txt.innerText = hN[0], 800);
+        setTimeout(() => {
+            txt.innerText = window.tempH.lvl;
+            info.innerHTML = `<b>${window.tempH.n}</b><br>Pozice: ${window.tempH.pos}`;
+            document.getElementById('pack-close').style.display = 'block';
+        }, 2000);
+    }
+
+    function closePack() {
+        db.p.push(window.tempH);
+        document.getElementById('pack-overlay').style.display = 'none';
+        document.getElementById('pack-close').style.display = 'none';
+        save(); updateUI();
+    }
+
+    function renderBag() {
+        let ui = document.getElementById('bag-ui'); ui.innerHTML = "";
+        db.b.forEach(slot => {
+            ui.innerHTML += `<div class="slot">${slot?'🥤':''}</div>`;
         });
     }
 
-    function uloz() { localStorage.setItem('fb_v6_9', JSON.stringify(hra)); }
-
     window.onload = () => {
-        let s = localStorage.getItem('fb_v6_9');
+        let s = localStorage.getItem('fb_v7');
         if(s) {
-            hra = JSON.parse(s);
-            document.getElementById('scr-reg').style.display = 'none';
+            db = JSON.parse(s);
+            document.getElementById('scr-reg').classList.remove('active');
             document.getElementById('top-ui').style.display = 'flex';
             document.getElementById('bot-nav').style.display = 'flex';
             prepni('match');
         }
-    };
+    }
 </script>
 </body>
 </html>
