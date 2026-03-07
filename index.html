@@ -3,99 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager v8.1</title>
+    <title>Floorball Manager Studio v8.3</title>
     <style>
         :root { 
-            --accent: #fbbf24; --bg: #05070a; --field: #064e3b; 
-            --card: #161a1d; --text: #fff; --danger: #ef4444; --warning: #f59e0b; --success: #22c55e;
-            --blue: #3b82f6; --red: #ef4444;
+            --accent: #fbbf24; --bg: #0a0e14; --field: #064e3b; 
+            --card: #151a21; --text: #f8fafc; --danger: #ef4444; --success: #22c55e;
+            --blue: #3b82f6; --red: #f43f5e; --glass: rgba(255, 255, 255, 0.05);
         }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
         
-        #top-ui { display: none; background: #111; padding: 12px; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 100; }
-        .stat-val { color: var(--accent); font-weight: bold; }
+        #top-ui { display: none; background: rgba(15, 19, 26, 0.9); backdrop-filter: blur(10px); padding: 15px; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 1000; }
+        .stat-badge { background: var(--glass); padding: 5px 12px; border-radius: 20px; border: 1px solid #333; font-weight: 600; font-size: 0.85rem; }
 
-        .screen { display: none; padding: 15px; padding-bottom: 100px; box-sizing: border-box; min-height: 100vh; }
+        .screen { display: none; padding: 20px; padding-bottom: 110px; box-sizing: border-box; min-height: 100vh; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .active { display: block; }
 
-        .card { background: var(--card); border: 1px solid #333; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
-        button { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 800; width: 100%; cursor: pointer; }
-        button:disabled { background: #333; color: #666; }
+        .card { background: var(--card); border: 1px solid #2d3748; border-radius: 18px; padding: 18px; margin-bottom: 15px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); position: relative; }
+        h3 { margin-top: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; font-size: 1rem; }
 
-        /* ENERGY BARS */
-        .energy-bar { height: 8px; background: #222; border-radius: 4px; margin-top: 6px; overflow: hidden; }
-        .energy-fill { height: 100%; transition: width 0.5s, background-color 0.5s; }
+        button { background: linear-gradient(135deg, var(--accent), #d97706); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: 800; width: 100%; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        button:active { transform: scale(0.96); }
+        button:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
 
-        /* MATCH ANIMATION 5v5 */
-        .match-box { width: 100%; height: 200px; background: var(--field); border-radius: 12px; position: relative; overflow: hidden; border: 2px solid #059669; display: none; margin: 10px 0; }
-        .player-dot { position: absolute; width: 12px; height: 12px; border-radius: 50%; border: 1px solid #fff; transition: all 0.6s ease; }
-        .ball { position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; z-index: 10; }
+        /* FIELD & LINEUP */
+        .field { width: 100%; height: 240px; background: linear-gradient(var(--field), #06402b); border: 3px solid #059669; border-radius: 20px; position: relative; margin: 15px 0; box-shadow: inset 0 0 50px rgba(0,0,0,0.5); }
+        .pos-btn { position: absolute; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,0.7); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; cursor: pointer; }
+        #p-LW { top: 20%; left: 10%; } #p-C { top: 12%; left: 43%; } #p-RW { top: 20%; right: 10%; }
+        #p-LD { bottom: 18%; left: 22%; } #p-RD { bottom: 18%; right: 22%; }
 
-        /* BAG */
-        .bag-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
-        .slot { aspect-ratio: 1; background: #111; border: 1px solid #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; }
+        /* LEAGUE TABLE */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
+        th { text-align: left; color: #64748b; font-size: 0.75rem; padding: 0 10px; }
+        td { padding: 12px 10px; background: var(--glass); border-top: 1px solid #333; border-bottom: 1px solid #333; }
+        td:first-child { border-left: 1px solid #333; border-radius: 10px 0 0 10px; }
+        td:last-child { border-right: 1px solid #333; border-radius: 0 10px 10px 0; font-weight: bold; }
 
-        #bot-nav { display: none; position: fixed; bottom: 0; width: 100%; height: 70px; background: #111; justify-content: space-around; align-items: center; border-top: 1px solid #333; z-index: 1000; }
-        .nav-item { font-size: 1.5rem; opacity: 0.4; cursor: pointer; }
-        .nav-item.active { opacity: 1; color: var(--accent); }
+        /* INVENTORY */
+        .bag-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+        .slot { aspect-ratio: 1; background: #111; border: 1px solid #444; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; cursor: pointer; position: relative; }
+        .stack-badge { position: absolute; bottom: 2px; right: 4px; font-size: 0.7rem; font-weight: bold; color: var(--accent); background: #000; padding: 1px 4px; border-radius: 5px; }
+
+        /* BOT NAV */
+        #bot-nav { display: none; position: fixed; bottom: 0; width: 100%; height: 80px; background: rgba(15, 19, 26, 0.95); backdrop-filter: blur(15px); justify-content: space-around; align-items: center; border-top: 1px solid #333; z-index: 1000; }
+        .nav-item { font-size: 1.6rem; opacity: 0.3; transition: 0.3s; padding: 10px; cursor: pointer; }
+        .nav-item.active { opacity: 1; color: var(--accent); transform: translateY(-5px); }
+
+        /* MATCH ANIMATION */
+        #match-area { width: 100%; height: 200px; border-radius: 15px; position: relative; overflow: hidden; display: none; background: #064e3b; border: 2px solid var(--accent); margin-bottom: 15px; }
+        .scoreboard { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: #000; padding: 5px 20px; border-radius: 30px; border: 1px solid var(--accent); display: flex; gap: 15px; font-weight: 900; z-index: 100; font-family: monospace; }
+        
+        .energy-bar { height: 6px; background: #222; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+        .energy-fill { height: 100%; transition: width 0.5s; }
     </style>
 </head>
 <body>
 
     <div id="top-ui">
-        <div style="display:flex; gap:15px;">
-            <div>🪙 <span id="ui-money" class="stat-val">0</span></div>
-            <div>LVL: <span id="ui-lvl" class="stat-val">0</span></div>
+        <div style="display:flex; gap:10px;">
+            <div class="stat-badge">🪙 <span id="ui-money" style="color:var(--accent)">0</span></div>
+            <div class="stat-badge">LVL <span id="ui-lvl">0</span></div>
         </div>
-        <div>Hráči: <span id="ui-count" class="stat-val">0</span></div>
-    </div>
-
-    <div id="scr-reg" class="screen active">
-        <h2 style="text-align:center">FLORBALOVÝ MANAŽER v8.1</h2>
-        <div class="card">
-            <input type="text" id="in-team" placeholder="Název klubu..." style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:8px; box-sizing:border-box; margin-bottom:15px;">
-            <button onclick="initGame()">ZALOŽIT KLUB</button>
-        </div>
+        <div class="stat-badge">👤 <span id="ui-count" style="color:var(--accent)">0</span> HRÁČŮ</div>
     </div>
 
     <div id="scr-match" class="screen">
-        <div id="match-area" class="match-box">
-            <div id="m-ball" class="ball"></div>
+        <h3>Aktuální Sezóna</h3>
+        <div id="match-area">
+            <div class="scoreboard">
+                <span id="score-h" style="color:var(--blue)">0</span>
+                <span style="color:#666">:</span>
+                <span id="score-a" style="color:var(--red)">0</span>
+            </div>
+            <div id="m-ball" style="position:absolute; width:8px; height:8px; background:#fff; border-radius:50%; box-shadow: 0 0 10px #fff; z-index:10;"></div>
             <div id="players-layer"></div>
-            <div style="position:absolute; width:100%; text-align:center; font-weight:bold; top:5px;"><span id="score-h">0</span> : <span id="score-a">0</span></div>
         </div>
-        <button id="btn-play" onclick="playMatch()">HRÁT ZÁPAS</button>
-        <div id="liga-tabulka" style="margin-top:15px"></div>
+        <button id="btn-play" onclick="playMatch()">VSTOUPIT DO ZÁPASU</button>
+        <div class="card" style="margin-top:20px; background:transparent; border:none; padding:0;">
+            <h3>Ligová Tabulka</h3>
+            <div id="liga-tabulka"></div>
+        </div>
     </div>
 
     <div id="scr-sleep" class="screen">
-        <h3>🛌 KABINA & REGENERACE</h3>
+        <h3>Regenerace týmu</h3>
         <div id="hraci-list"></div>
     </div>
 
     <div id="scr-profile" class="screen">
-        <h3>INVENTÁŘ (BATOH)</h3>
+        <h3>Základní Pětka</h3>
+        <div class="field">
+            <div id="p-LW" class="pos-btn" onclick="openSelect('LW')">LW</div>
+            <div id="p-C" class="pos-btn" onclick="openSelect('C')">C</div>
+            <div id="p-RW" class="pos-btn" onclick="openSelect('RW')">RW</div>
+            <div id="p-LD" class="pos-btn" onclick="openSelect('LD')">LD</div>
+            <div id="p-RD" class="pos-btn" onclick="openSelect('RD')">RD</div>
+        </div>
+        <div id="select-box"></div>
+        <h3>Batoh</h3>
         <div class="bag-grid" id="bag-ui"></div>
-        <div id="use-item-ui" style="display:none; margin-top:10px" class="card">
-            <h4>Použít Drink na:</h4>
+        <div id="use-item-ui" style="display:none; margin-top:15px" class="card">
+            <h4>Použít Energy Drink na:</h4>
             <div id="drink-targets"></div>
         </div>
     </div>
 
     <div id="scr-shop" class="screen">
-        <h3>OBCHOD</h3>
-        <div class="card" id="shop-drink-card"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Draft & Lékárna</h3>
+            <div id="shop-timer" style="font-size:0.8rem; color:var(--accent); font-family:monospace;"></div>
+        </div>
+        <div id="shop-drink-card" class="card" style="border: 1px solid var(--accent); background: rgba(251, 191, 36, 0.05);"></div>
         <div class="card">
-            <button onclick="buyPack('bronz')">BRONZ (5 000 🪙)</button>
-            <button onclick="buyPack('silver')" style="margin-top:10px;">STŘÍBRO (10 000 🪙)</button>
-            <button onclick="buyPack('gold')" style="margin-top:10px;">GOLD (15 000 🪙)</button>
+            <button onclick="buyPack('bronz')" style="margin-bottom:10px; background:#cd7f32; color:white;">Bronzový Draft (5k)</button>
+            <button onclick="buyPack('silver')" style="margin-bottom:10px; background:#c0c0c0; color:black;">Stříbrný Draft (10k)</button>
+            <button onclick="buyPack('gold')" style="background:#ffd700; color:black;">Zlatý Draft (15k)</button>
         </div>
     </div>
 
     <div id="pack-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
         <div id="pack-anim-text" style="font-size:5rem; color:var(--accent); font-weight:900;">?</div>
         <div id="pack-info" style="margin:20px 0; font-size:1.5rem;"></div>
-        <button id="pack-close" onclick="closePack()">PŘEVZÍT</button>
+        <button id="pack-close" onclick="closePack()" style="width:200px; display:none;">PŘEVZÍT</button>
     </div>
 
     <div id="bot-nav">
@@ -106,15 +135,17 @@
     </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('fb_v8_1')) || {
+    // System Data
+    let db = JSON.parse(localStorage.getItem('fb_v8_3')) || {
         m: 10000, p: [], b: Array(20).fill(null), lineup: {LW:null,C:null,RW:null,LD:null,RD:null},
-        matches: 0, league: [{n:"Tatran",lvl:5,pts:0},{n:"Vítkovice",lvl:8,pts:0}]
+        matches: 0, league: [{n:"Tatran",lvl:5,pts:0},{n:"Vítkovice",lvl:8,pts:0}],
+        lastMatch: 0, shopRefresh: 0, drinkInStock: false
     };
 
     const names = ["Petr","Filip","Marek","Honza","Adam","Lukáš"];
     const sNames = ["Rychlý","Tvrdý","Ostrý","Modrý","Nový","Malý"];
 
-    function save() { localStorage.setItem('fb_v8_1', JSON.stringify(db)); }
+    function save() { localStorage.setItem('fb_v8_3', JSON.stringify(db)); }
 
     function prepni(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -123,29 +154,12 @@
         const navMap = {sleep:0, match:1, profile:2, shop:3};
         document.querySelectorAll('.nav-item')[navMap[id]].classList.add('active');
         
-        if(id==='shop') checkDrinkStock();
-        if(id==='profile') renderBag();
-        if(id==='sleep') renderSleep();
+        if(id==='profile') { renderField(); renderBag(); }
         if(id==='match') renderLeague();
         updateUI();
     }
 
-    function initGame() {
-        let n = document.getElementById('in-team').value;
-        if(!n) return alert("Zadej název!");
-        db.name = n;
-        ["LW","C","RW","LD","RD"].forEach((pos, i) => {
-            db.p.push({id: Date.now()+i, n: names[i%names.length]+" "+sNames[i%sNames.length], lvl: 1, pos: pos, e: 100, lastSleep: 0, sleepUntil: 0});
-            db.lineup[pos] = db.p[i].id;
-        });
-        db.league.push({n: n, lvl: 1, pts: 0, isP: true});
-        document.getElementById('scr-reg').classList.remove('active');
-        document.getElementById('top-ui').style.display = 'flex';
-        document.getElementById('bot-nav').style.display = 'flex';
-        prepni('match');
-        save();
-    }
-
+    // GENERAL UI UPDATE
     function updateUI() {
         document.getElementById('ui-money').innerText = db.m.toLocaleString();
         document.getElementById('ui-count').innerText = db.p.length;
@@ -157,75 +171,126 @@
         document.getElementById('ui-lvl').innerText = count === 5 ? Math.round(sum/5) : 0;
     }
 
+    // MATCH LOGIC & COOLDOWN
+    function playMatch() {
+        if(db.p.length < 5) return alert("Nemáš dostatek hráčů! Musíš mít alespoň 5 hráčů v klubu.");
+        
+        for(let pos in db.lineup) {
+            let h = db.p.find(x => x.id === db.lineup[pos]);
+            if(h && h.sleepUntil > Date.now()) return alert(h.n + " aktuálně spí! Zápas nelze zahájit.");
+        }
+
+        db.lastMatch = Date.now();
+        save();
+        updateTimers();
+
+        document.getElementById('match-area').style.display = 'block';
+        document.getElementById('btn-play').style.display = 'none';
+        const layer = document.getElementById('players-layer');
+        layer.innerHTML = "";
+        let dots = [];
+        for(let i=0; i<10; i++) {
+            let d = document.createElement('div');
+            d.style.cssText = `position:absolute; width:12px; height:12px; border-radius:50%; border:1px solid #fff; transition:0.6s;`;
+            d.style.backgroundColor = i < 5 ? 'var(--blue)' : 'var(--red)';
+            layer.appendChild(d); dots.push(d);
+        }
+        let ball = document.getElementById('m-ball');
+        let timer = 0, sh = 0, sa = 0;
+        let int = setInterval(() => {
+            dots.forEach(d => { d.style.left = Math.random()*90 + "%"; d.style.top = Math.random()*80 + "%"; });
+            ball.style.left = dots[Math.floor(Math.random()*5)].style.left;
+            ball.style.top = dots[Math.floor(Math.random()*5)].style.top;
+            if(Math.random() < 0.12) Math.random() > 0.45 ? sh++ : sa++;
+            document.getElementById('score-h').innerText = sh;
+            document.getElementById('score-a').innerText = sa;
+            if(++timer > 15) { clearInterval(int); finishMatch(sh, sa); }
+        }, 600);
+    }
+
+    function finishMatch(sh, sa) {
+        let pT = db.league.find(x => x.isP);
+        if(sh > sa) { db.m += 1200; pT.pts += 3; alert("Vítězství! Získal jsi 1200 🪙"); } 
+        else if(sh === sa) { db.m += 400; pT.pts += 1; alert("Remíza. Získal jsi 400 🪙"); }
+        else { alert("Porážka. Příště to vyjde!"); }
+        
+        for(let pos in db.lineup) {
+            let h = db.p.find(x => x.id === db.lineup[pos]);
+            if(h) h.e = Math.max(0, h.e - 18);
+        }
+        document.getElementById('match-area').style.display = 'none';
+        document.getElementById('btn-play').style.display = 'block';
+        save(); updateUI(); renderLeague();
+    }
+
+    // SLEEP / KABINA
+    function startSleep(id) {
+        let h = db.p.find(x => x.id === id);
+        h.e = 100; h.lastSleep = Date.now(); h.sleepUntil = Date.now() + 60000; // 1 min spánek
+        save(); renderSleep(); updateUI();
+    }
+
     function renderSleep() {
         let div = document.getElementById('hraci-list');
         div.innerHTML = "";
         let now = Date.now();
         db.p.forEach(h => {
             let isSleeping = h.sleepUntil > now;
-            let cooldown = h.lastSleep + 600000 > now;
-            let color = h.e < 30 ? 'var(--danger)' : (h.e < 70 ? 'var(--warning)' : 'var(--success)');
+            let cooldown = h.lastSleep + 600000 > now; // 10 minut celkový cooldown
+            let color = h.e < 30 ? 'var(--danger)' : (h.e < 70 ? '#f59e0b' : 'var(--success)');
+            
+            let btnText = "SPÁNEČEK";
+            if(isSleeping) btnText = `SPÍ (${Math.ceil((h.sleepUntil - now)/1000)}s)`;
+            else if(cooldown) btnText = `COOLDOWN (${Math.ceil((h.lastSleep + 600000 - now)/60000)}m)`;
+
             div.innerHTML += `
             <div class="card">
                 <b>${h.n}</b> (${h.pos}) | LVL ${h.lvl}
                 <div class="energy-bar"><div class="energy-fill" style="width:${h.e}%; background:${color}"></div></div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
                     <small>Energie: ${h.e}%</small>
-                    <button onclick="startSleep(${h.id})" style="width:auto; padding:8px 12px; font-size:0.7rem;" ${isSleeping || cooldown ? 'disabled' : ''}>
-                        ${isSleeping ? 'SPÍ...' : (cooldown ? 'REGEN...' : 'SPÁNEČEK')}
+                    <button onclick="startSleep(${h.id})" style="width:auto; padding:8px 12px; font-size:0.75rem;" ${isSleeping || cooldown ? 'disabled' : ''}>
+                        ${btnText}
                     </button>
                 </div>
             </div>`;
         });
     }
 
-    function startSleep(id) {
-        let h = db.p.find(x => x.id === id);
-        h.e = 100; h.lastSleep = Date.now(); h.sleepUntil = Date.now() + 60000;
-        save(); renderSleep();
-    }
-
-    /* OBCHOD LOGIKA */
-    function checkDrinkStock() {
-        let hasDrink = Math.random() > 0.5;
-        let container = document.getElementById('shop-drink-card');
-        container.innerHTML = hasDrink ? 
-            `<h4>LÉKÁRNA: ENERGY DRINK SKLADEM!</h4><button onclick="buyDrink()">KOUPIT DRINK (500 🪙)</button>` : 
-            `<h4>LÉKÁRNA: VYPRODÁNO</h4>`;
-    }
-
+    // SHOP TIMERS & STACKING
     function buyDrink() {
         if(db.m < 500) return alert("Málo peněz!");
-        let slot = db.b.indexOf(null);
-        if(slot === -1) return alert("Batoh je plný!");
-        db.m -= 500; db.b[slot] = { type: 'drink', icon: '🥤' };
-        save(); updateUI(); checkDrinkStock();
+        
+        // Hledání existujícího stacku drinků
+        let existingSlot = db.b.findIndex(item => item && item.type === 'drink');
+        if(existingSlot !== -1) {
+            db.b[existingSlot].count++;
+        } else {
+            let emptySlot = db.b.indexOf(null);
+            if(emptySlot === -1) return alert("Batoh je plný!");
+            db.b[emptySlot] = { type: 'drink', icon: '🥤', count: 1 };
+        }
+        
+        db.m -= 500;
+        db.drinkInStock = false; // Po koupi zmizí do dalšího refreshe
+        save(); updateUI(); renderShop();
     }
 
-    function buyPack(type) {
-        let cost = type==='bronz'?5000:type==='silver'?10000:15000;
-        if(db.m < cost) return alert("Nemáš peníze!");
-        db.m -= cost;
-        document.getElementById('pack-overlay').style.display = 'flex';
-        let range = type==='bronz'?[1,9]:type==='silver'?[10,19]:[20,29];
-        let hN = names[Math.floor(Math.random()*names.length)] + " " + sNames[Math.floor(Math.random()*sNames.length)];
-        window.tempH = {id: Date.now(), n: hN, lvl: Math.floor(Math.random()*(range[1]-range[0]+1))+range[0], pos: ["LW","C","RW","LD","RD"][Math.floor(Math.random()*5)], e: 100, lastSleep:0, sleepUntil:0};
-        setTimeout(() => {
-            document.getElementById('pack-anim-text').innerText = window.tempH.lvl;
-            document.getElementById('pack-info').innerHTML = `<b>${window.tempH.n}</b><br>${window.tempH.pos}`;
-        }, 1000);
-    }
-
-    function closePack() {
-        db.p.push(window.tempH); document.getElementById('pack-overlay').style.display = 'none';
-        save(); updateUI();
+    function renderShop() {
+        let container = document.getElementById('shop-drink-card');
+        if(db.drinkInStock) {
+            container.innerHTML = `<h4 style="margin:0 0 10px 0;">LÉKÁRNA: ENERGY DRINK SKLADEM!</h4><button onclick="buyDrink()">KOUPIT (500 🪙)</button>`;
+        } else {
+            container.innerHTML = `<h4 style="margin:0; color:#666;">LÉKÁRNA: ZBOŽÍ VYPRODÁNO</h4>`;
+        }
     }
 
     function renderBag() {
         let ui = document.getElementById('bag-ui'); ui.innerHTML = "";
         db.b.forEach((item, idx) => {
             let s = document.createElement('div');
-            s.className = 'slot'; s.innerHTML = item ? item.icon : "";
+            s.className = 'slot'; 
+            s.innerHTML = item ? `${item.icon}<div class="stack-badge">x${item.count}</div>` : "";
             s.onclick = () => { if(item && item.type === 'drink') showDrinkTargets(idx); };
             ui.appendChild(s);
         });
@@ -238,67 +303,99 @@
         db.p.forEach(h => {
             let b = document.createElement('button');
             b.style.margin = "5px 0"; b.innerText = `${h.n} (${h.e}%)`;
-            b.onclick = () => { h.e = 100; db.b[slotIdx] = null; ui.style.display = 'none'; save(); renderBag(); };
+            b.onclick = () => { 
+                h.e = 100; 
+                db.b[slotIdx].count--;
+                if(db.b[slotIdx].count <= 0) db.b[slotIdx] = null;
+                ui.style.display = 'none'; 
+                save(); renderBag(); alert(`${h.n} doplnil energii na 100%!`);
+            };
             list.appendChild(b);
         });
     }
 
-    /* MATCH ENGINE 5v5 */
-    function playMatch() {
-        document.getElementById('match-area').style.display = 'block';
-        document.getElementById('btn-play').style.display = 'none';
-        const layer = document.getElementById('players-layer');
-        layer.innerHTML = "";
-        let dots = [];
-        for(let i=0; i<10; i++) {
-            let d = document.createElement('div');
-            d.className = 'player-dot';
-            d.style.backgroundColor = i < 5 ? 'var(--blue)' : 'var(--red)';
-            layer.appendChild(d); dots.push(d);
-        }
-        let ball = document.getElementById('m-ball');
-        let timer = 0, sh = 0, sa = 0;
-        let int = setInterval(() => {
-            dots.forEach(d => { d.style.left = Math.random()*90 + "%"; d.style.top = Math.random()*80 + "%"; });
-            ball.style.left = dots[Math.floor(Math.random()*5)].style.left;
-            ball.style.top = dots[Math.floor(Math.random()*5)].style.top;
-            if(Math.random() < 0.1) Math.random() > 0.5 ? sh++ : sa++;
-            document.getElementById('score-h').innerText = sh;
-            document.getElementById('score-a').innerText = sa;
-            if(++timer > 15) { clearInterval(int); finishMatch(sh, sa); }
-        }, 600);
-    }
-
-    function finishMatch(sh, sa) {
-        let pT = db.league.find(x => x.isP);
-        if(sh > sa) { db.m += 1000; pT.pts += 3; alert("VÝHRA! +1000 🪙"); } else { alert("PROHRA / REMÍZA"); }
+    // OTHER UI (Field, Select, League, Packs) - Zkráceno, plně funkční
+    function renderField() {
         for(let pos in db.lineup) {
             let h = db.p.find(x => x.id === db.lineup[pos]);
-            if(h) h.e = Math.max(0, h.e - 15);
+            let el = document.getElementById('p-' + pos);
+            el.innerHTML = h ? `<div style="text-align:center"><span>${pos}</span><br><span style="color:var(--accent)">${h.lvl}</span></div>` : pos;
+            el.style.borderColor = h ? "var(--accent)" : "#fff";
         }
-        document.getElementById('match-area').style.display = 'none';
-        document.getElementById('btn-play').style.display = 'block';
-        save(); updateUI();
     }
-
+    function openSelect(pos) {
+        let div = document.getElementById('select-box');
+        div.innerHTML = `<div class="card" style="border:1px solid var(--accent)"><h3>Změna postu ${pos}</h3>`;
+        db.p.filter(x => x.pos === pos).forEach(h => {
+            div.innerHTML += `<button onclick="setPos('${pos}', ${h.id})" style="margin:4px 0; background:rgba(255,255,255,0.1); color:white; border:1px solid #444;">${h.n} (LVL ${h.lvl})</button>`;
+        });
+        div.innerHTML += `<button onclick="document.getElementById('select-box').innerHTML=''" style="background:transparent; color:#666;">Zavřít</button></div>`;
+    }
+    function setPos(pos, id) { db.lineup[pos] = id; renderField(); save(); document.getElementById('select-box').innerHTML=''; }
     function renderLeague() {
         let div = document.getElementById('liga-tabulka');
-        let html = "<table>";
-        db.league.sort((a,b) => b.pts - a.pts).forEach(t => {
-            html += `<tr style="${t.isP?'color:var(--accent)':''}"><td>${t.n}</td><td>LVL ${t.lvl}</td><td>${t.pts} b.</td></tr>`;
+        let html = `<table><thead><tr><th>Tým</th><th>Level</th><th>Body</th></tr></thead><tbody>`;
+        db.league.sort((a,b) => b.pts - a.pts).forEach((t, i) => {
+            html += `<tr style="${t.isP ? 'color:var(--accent)' : ''}"><td>${i+1}. ${t.n}</td><td>Lvl ${t.lvl}</td><td>${t.pts}</td></tr>`;
         });
-        div.innerHTML = html + "</table>";
+        div.innerHTML = html + "</tbody></table>";
+    }
+    function buyPack(type) {
+        let cost = type==='bronz'?5000:type==='silver'?10000:15000;
+        if(db.m < cost) return alert("Nemáš peníze!");
+        db.m -= cost; document.getElementById('pack-overlay').style.display = 'flex';
+        let range = type==='bronz'?[1,9]:type==='silver'?[10,19]:[20,29];
+        window.tempH = {id: Date.now(), n: names[Math.floor(Math.random()*names.length)] + " " + sNames[Math.floor(Math.random()*sNames.length)], lvl: Math.floor(Math.random()*(range[1]-range[0]+1))+range[0], pos: ["LW","C","RW","LD","RD"][Math.floor(Math.random()*5)], e: 100, lastSleep:0, sleepUntil:0};
+        setTimeout(() => { document.getElementById('pack-anim-text').innerText = window.tempH.lvl; document.getElementById('pack-info').innerHTML = `<b>${window.tempH.n}</b><br>${window.tempH.pos}`; document.getElementById('pack-close').style.display = 'block'; }, 1000);
+    }
+    function closePack() { db.p.push(window.tempH); document.getElementById('pack-overlay').style.display = 'none'; document.getElementById('pack-close').style.display = 'none'; save(); updateUI(); }
+
+    // GLOVAL INTERVAL FOR ALL TIMERS
+    function updateTimers() {
+        let now = Date.now();
+        
+        // Zápas Cooldown
+        let btnPlay = document.getElementById('btn-play');
+        let matchRemaining = Math.ceil((db.lastMatch + 60000 - now) / 1000);
+        if(db.p.length < 5) {
+            btnPlay.disabled = true; btnPlay.innerText = "MÁLO HRÁČŮ (MIN 5)";
+        } else if (matchRemaining > 0) {
+            btnPlay.disabled = true; btnPlay.innerText = `DALŠÍ ZÁPAS ZA ${matchRemaining}S`;
+        } else if(btnPlay.style.display !== 'none') {
+            btnPlay.disabled = false; btnPlay.innerText = "VSTOUPIT DO ZÁPASU";
+        }
+
+        // Shop Refresh
+        let shopRemaining = Math.ceil((db.shopRefresh - now) / 1000);
+        if (shopRemaining <= 0) {
+            db.shopRefresh = now + 120000; // 120 vteřin do další obnovy
+            db.drinkInStock = Math.random() > 0.5; // 50% šance na naskladnění
+            save(); renderShop();
+            shopRemaining = 120;
+        }
+        document.getElementById('shop-timer').innerText = `Obnova za: ${shopRemaining}s`;
+
+        // Render sleep ui if active
+        if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep();
     }
 
-    setInterval(() => { if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep(); }, 1000);
+    setInterval(updateTimers, 1000);
 
     window.onload = () => {
-        let s = localStorage.getItem('fb_v8_1');
+        let s = localStorage.getItem('fb_v8_3');
         if(s) { 
             db = JSON.parse(s); 
             document.getElementById('top-ui').style.display = 'flex';
             document.getElementById('bot-nav').style.display = 'flex';
+            renderShop();
             prepni('match'); 
+        } else {
+            ["LW","C","RW","LD","RD"].forEach((pos, i) => {
+                db.p.push({id: Date.now()+i, n: "Hráč "+(i+1), lvl: 1, pos: pos, e: 100, lastSleep:0, sleepUntil:0});
+                db.lineup[pos] = db.p[i].id;
+            });
+            db.league.push({n: "Můj Tým", lvl: 1, pts: 0, isP: true});
+            save(); window.location.reload();
         }
     }
 </script>
