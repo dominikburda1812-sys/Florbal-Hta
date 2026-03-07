@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager Studio v8.4</title>
+    <title>Floorball Manager Studio v8.5</title>
     <style>
         :root { 
             --accent: #fbbf24; --field: #064e3b; 
             --text: #f8fafc; --danger: #ef4444; --success: #22c55e;
             --blue: #3b82f6; --red: #f43f5e; --glass: rgba(255, 255, 255, 0.05);
         }
-        /* Body now has transition for smooth background changes */
-        body { font-family: 'Inter', 'Segoe UI', sans-serif; color: var(--text); margin: 0; overflow-x: hidden; transition: background 0.5s ease; min-height: 100vh; background-attachment: fixed; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; color: var(--text); margin: 0; overflow-x: hidden; transition: background 0.5s ease; min-height: 100vh; background-attachment: fixed; background: #0a0e14; }
         
         #top-ui { display: none; background: rgba(10, 14, 20, 0.7); backdrop-filter: blur(15px); padding: 15px; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 30px rgba(0,0,0,0.5); }
         .stat-badge { background: var(--glass); padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); font-weight: 600; font-size: 0.85rem; }
@@ -20,7 +19,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .active { display: block; }
 
-        /* Vylepšené průhledné karty */
         .card { background: rgba(21, 26, 33, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 18px; margin-bottom: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); position: relative; }
         h3 { margin-top: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; font-size: 1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 
@@ -51,10 +49,14 @@
         .nav-item { font-size: 1.6rem; opacity: 0.4; transition: 0.3s; padding: 10px; cursor: pointer; filter: grayscale(100%); }
         .nav-item.active { opacity: 1; filter: grayscale(0%); transform: translateY(-5px); text-shadow: 0 0 15px rgba(251,191,36,0.5); }
 
-        /* MATCH ANIMATION */
+        /* MATCH ANIMATION - SMOOTHED */
         #match-area { width: 100%; height: 200px; border-radius: 15px; position: relative; overflow: hidden; display: none; background: radial-gradient(circle at center, #064e3b, #022c22); border: 2px solid var(--accent); margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .scoreboard { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); padding: 5px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); display: flex; gap: 15px; font-weight: 900; z-index: 100; font-family: monospace; font-size: 1.2rem; }
         
+        /* PLYNULÝ POHYB KOLEČEK A BALÓNKU */
+        .player-dot { position: absolute; width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); box-shadow:0 0 10px rgba(0,0,0,0.5); z-index: 5; transition: top 0.4s ease-out, left 0.4s ease-out; }
+        .ball { position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; box-shadow: 0 0 15px #fff; z-index: 10; transition: top 0.2s linear, left 0.2s linear; }
+
         .energy-bar { height: 6px; background: rgba(0,0,0,0.5); border-radius: 3px; margin-top: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
         .energy-fill { height: 100%; transition: width 0.5s; }
     </style>
@@ -69,7 +71,7 @@
         <div class="stat-badge">👤 <span id="ui-count" style="color:var(--accent)">0</span></div>
     </div>
 
-    <div id="scr-match" class="screen">
+    <div id="scr-match" class="screen active">
         <h3>Aktuální Sezóna</h3>
         <div id="match-area">
             <div class="scoreboard">
@@ -77,7 +79,7 @@
                 <span style="color:#666">:</span>
                 <span id="score-a" style="color:var(--red)">0</span>
             </div>
-            <div id="m-ball" style="position:absolute; width:8px; height:8px; background:#fff; border-radius:50%; box-shadow: 0 0 15px #fff; z-index:10;"></div>
+            <div id="m-ball" class="ball"></div>
             <div id="players-layer"></div>
         </div>
         <button id="btn-play" onclick="playMatch()">VSTOUPIT DO ZÁPASU</button>
@@ -137,7 +139,8 @@
     </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('fb_v8_4')) || {
+    // DATA & SAVING
+    let db = JSON.parse(localStorage.getItem('fb_v8_5')) || {
         m: 10000, p: [], b: Array(20).fill(null), lineup: {LW:null,C:null,RW:null,LD:null,RD:null},
         matches: 0, league: [{n:"Tatran",lvl:5,pts:0},{n:"Vítkovice",lvl:8,pts:0}],
         lastMatch: 0, shopRefresh: 0, drinkInStock: false
@@ -146,7 +149,6 @@
     const names = ["Petr","Filip","Marek","Honza","Adam","Lukáš"];
     const sNames = ["Rychlý","Tvrdý","Ostrý","Modrý","Nový","Malý"];
 
-    // Dynamická pozadí pro jednotlivé obrazovky
     const backgrounds = {
         'match': 'radial-gradient(circle at top, #022c22 0%, #0a0e14 70%)',
         'sleep': 'linear-gradient(135deg, #172554 0%, #0a0e14 100%)',
@@ -154,17 +156,14 @@
         'shop': 'radial-gradient(circle at top right, #3f181d 0%, #0a0e14 60%)'
     };
 
-    function save() { localStorage.setItem('fb_v8_4', JSON.stringify(db)); }
+    function save() { localStorage.setItem('fb_v8_5', JSON.stringify(db)); }
 
     function prepni(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('scr-' + id).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        
         const navMap = {sleep:0, match:1, profile:2, shop:3};
         document.querySelectorAll('.nav-item')[navMap[id]].classList.add('active');
-        
-        // Změna barvy pozadí podle záložky
         document.body.style.background = backgrounds[id];
         
         if(id==='profile') { renderField(); renderBag(); }
@@ -183,11 +182,12 @@
         document.getElementById('ui-lvl').innerText = count === 5 ? Math.round(sum/5) : 0;
     }
 
+    // MATCH ENGINE v8.5 - PLYNULÝ POHYB
     function playMatch() {
-        if(db.p.length < 5) return alert("Nemáš dostatek hráčů! Musíš mít alespoň 5 hráčů.");
+        if(db.p.length < 5) return alert("Nemáš dostatek hráčů!");
         for(let pos in db.lineup) {
             let h = db.p.find(x => x.id === db.lineup[pos]);
-            if(h && h.sleepUntil > Date.now()) return alert(h.n + " aktuálně spí! Zápas nelze zahájit.");
+            if(h && h.sleepUntil > Date.now()) return alert(h.n + " aktuálně spí!");
         }
 
         db.lastMatch = Date.now(); save(); updateTimers();
@@ -195,23 +195,83 @@
         document.getElementById('match-area').style.display = 'block';
         document.getElementById('btn-play').style.display = 'none';
         const layer = document.getElementById('players-layer'); layer.innerHTML = "";
+        
+        let ball = document.getElementById('m-ball');
+        
+        // Vytvoření hráčů s definovanými zónami pohybu
         let dots = [];
+        let playerZones = [
+            // Modrý tým (Home) - Vlevo
+            { x: [5, 15], y: [10, 30] }, // LD
+            { x: [5, 15], y: [50, 80] }, // RD
+            { x: [30, 45], y: [10, 30] }, // LW
+            { x: [30, 45], y: [35, 55] }, // C
+            { x: [30, 45], y: [60, 80] }, // RW
+            // Červený tým (Away) - Vpravo
+            { x: [75, 90], y: [10, 30] }, // LD
+            { x: [75, 90], y: [50, 80] }, // RD
+            { x: [55, 70], y: [10, 30] }, // LW
+            { x: [55, 70], y: [35, 55] }, // C
+            { x: [55, 70], y: [60, 80] }, // RW
+        ];
+
         for(let i=0; i<10; i++) {
             let d = document.createElement('div');
-            d.style.cssText = `position:absolute; width:12px; height:12px; border-radius:50%; border:2px solid rgba(255,255,255,0.8); transition:0.6s; box-shadow:0 0 10px rgba(0,0,0,0.5);`;
+            d.className = 'player-dot';
             d.style.backgroundColor = i < 5 ? 'var(--blue)' : 'var(--red)';
+            // Počáteční pozice
+            d.style.left = (playerZones[i].x[0] + playerZones[i].x[1])/2 + "%";
+            d.style.top = (playerZones[i].y[0] + playerZones[i].y[1])/2 + "%";
             layer.appendChild(d); dots.push(d);
         }
-        let ball = document.getElementById('m-ball');
+        
         let timer = 0, sh = 0, sa = 0;
+        let ballPossession = 0; // Kdo má míček (index hráče)
+
+        // Herní smyčka
         let int = setInterval(() => {
-            dots.forEach(d => { d.style.left = Math.random()*90 + "%"; d.style.top = Math.random()*80 + "%"; });
-            ball.style.left = dots[Math.floor(Math.random()*5)].style.left;
-            ball.style.top = dots[Math.floor(Math.random()*5)].style.top;
-            if(Math.random() < 0.12) Math.random() > 0.45 ? sh++ : sa++;
+            // 1. Pohyb hráčů v jejich zónách
+            dots.forEach((d, i) => {
+                let zone = playerZones[i];
+                let newX = zone.x[0] + Math.random() * (zone.x[1] - zone.x[0]);
+                let newY = zone.y[0] + Math.random() * (zone.y[1] - zone.y[0]);
+                d.style.left = newX + "%";
+                d.style.top = newY + "%";
+            });
+
+            // 2. Nahrávka míčku (změna držení)
+            if(Math.random() < 0.4) {
+                // Sance na nahrávku v rámci týmu nebo ztrátu
+                if(Math.random() < 0.8) {
+                    // Nahrávka v týmu
+                    let teamStart = ballPossession < 5 ? 0 : 5;
+                    ballPossession = teamStart + Math.floor(Math.random()*5);
+                } else {
+                    // Ztráta míčku
+                    ballPossession = ballPossession < 5 ? 5 + Math.floor(Math.random()*5) : Math.floor(Math.random()*5);
+                }
+            }
+
+            // 3. Pohyb míčku k hráči, který ho má
+            // Přidáme malý offset, aby míček nebyl přesně pod puntíkem
+            let pLeft = parseFloat(dots[ballPossession].style.left);
+            let pTop = parseFloat(dots[ballPossession].style.top);
+            ball.style.left = (pLeft + 0.5) + "%";
+            ball.style.top = (pTop + 0.5) + "%";
+
+            // 4. Skórování
+            // Sance na gól je vyšší, pokud má míček útočník blízko brány
+            if(Math.random() < 0.10) { 
+                if(ballPossession >= 2 && ballPossession <= 4 && pLeft > 35) sh++; // Modrý gól
+                if(ballPossession >= 7 && ballPossession <= 9 && pLeft < 60) sa++; // Červený gól
+            }
+            
             document.getElementById('score-h').innerText = sh; document.getElementById('score-a').innerText = sa;
-            if(++timer > 15) { clearInterval(int); finishMatch(sh, sa); }
-        }, 600);
+            
+            if(++timer > 20) { // Zápas trvá o něco déle, protože je plynulý
+                clearInterval(int); finishMatch(sh, sa); 
+            }
+        }, 400); // Rychlejší interval pro plynulost
     }
 
     function finishMatch(sh, sa) {
@@ -229,6 +289,7 @@
         save(); updateUI(); renderLeague();
     }
 
+    // OSTATNÍ FUNKCE (Zůstávají stejné)
     function startSleep(id) {
         let h = db.p.find(x => x.id === id);
         h.e = 100; h.lastSleep = Date.now(); h.sleepUntil = Date.now() + 60000;
@@ -244,7 +305,7 @@
             let color = h.e < 30 ? 'var(--danger)' : (h.e < 70 ? '#f59e0b' : 'var(--success)');
             let btnText = "SPÁNEČEK";
             if(isSleeping) btnText = `SPÍ (${Math.ceil((h.sleepUntil - now)/1000)}s)`;
-            else if(cooldown) btnText = `COOLDOWN (${Math.ceil((h.lastSleep + 600000 - now)/60000)}m)`;
+            else if(cooldown) btnText = `REGEN (${Math.ceil((h.lastSleep + 600000 - now)/60000)}m)`;
 
             div.innerHTML += `
             <div class="card">
@@ -373,7 +434,7 @@
     setInterval(updateTimers, 1000);
 
     window.onload = () => {
-        let s = localStorage.getItem('fb_v8_4');
+        let s = localStorage.getItem('fb_v8_5');
         if(s) { 
             db = JSON.parse(s); 
             document.getElementById('top-ui').style.display = 'flex';
