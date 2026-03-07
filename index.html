@@ -3,73 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager v8.8</title>
+    <title>Floorball Manager v8.9</title>
     <style>
         :root { 
             --accent: #fbbf24; --field: #064e3b; 
             --text: #f8fafc; --danger: #ef4444; --success: #22c55e;
-            --blue: #3b82f6; --red: #f43f5e; --glass: rgba(255, 255, 255, 0.05);
+            --blue: #3b82f6; --red: #f43f5e; --glass: rgba(255, 255, 255, 0.1);
         }
         body { font-family: 'Inter', sans-serif; color: var(--text); margin: 0; background: #0a0e14; overflow-x: hidden; }
         
-        #setup-overlay { position: fixed; inset: 0; background: #0a0e14; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        #setup-overlay input { background: #1a202c; border: 2px solid var(--accent); color: white; padding: 15px; border-radius: 12px; width: 80%; max-width: 300px; font-size: 1.2rem; margin: 20px 0; text-align: center; }
+        /* TOP UI */
+        #top-ui { display: none; background: rgba(10, 14, 20, 0.9); backdrop-filter: blur(15px); padding: 12px; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 1000; }
+        .stat-badge { background: var(--glass); padding: 6px 12px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
 
-        #top-ui { display: none; background: rgba(10, 14, 20, 0.8); backdrop-filter: blur(15px); padding: 15px; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; z-index: 1000; }
-        .stat-badge { background: var(--glass); padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); font-weight: 600; font-size: 0.85rem; }
-
-        .screen { display: none; padding: 20px; padding-bottom: 110px; min-height: calc(100vh - 60px); animation: fadeIn 0.4s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
+        /* SCREENS */
+        .screen { display: none; padding: 20px; padding-bottom: 110px; min-height: calc(100vh - 60px); animation: fadeIn 0.3s; }
         .active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .card { background: rgba(21, 26, 33, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 18px; margin-bottom: 15px; }
-        button { background: linear-gradient(135deg, var(--accent), #d97706); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: 800; width: 100%; cursor: pointer; text-transform: uppercase; }
-        button:disabled { background: #333; color: #666; cursor: not-allowed; }
+        button { background: linear-gradient(135deg, var(--accent), #d97706); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: 800; width: 100%; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
 
         /* MATCH FIELD */
         #match-area { width: 100%; height: 220px; border-radius: 15px; position: relative; overflow: hidden; display: none; background: #064e3b; border: 2px solid var(--accent); margin-bottom: 15px; }
         .goal-net { position: absolute; width: 8px; height: 50px; border: 2px solid white; top: 50%; transform: translateY(-50%); }
         .player-dot { position: absolute; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; z-index: 5; transition: 0.4s ease-out; }
         .gk-dot { border-radius: 2px; width: 14px; height: 14px; }
-        .ball { position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; z-index: 10; transition: 0.2s linear; }
+        .ball { position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; z-index: 10; transition: 0.2s linear; box-shadow: 0 0 8px #fff; }
 
-        /* FIELD SETUP */
+        /* SETUP FIELD */
         .field { width: 100%; height: 260px; background: #022c22; border-radius: 20px; position: relative; margin: 15px 0; border: 1px solid #059669; }
         .pos-btn { position: absolute; width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff; background: #000; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; }
         #p-GK { bottom: 8%; left: 44%; } #p-LD { bottom: 25%; left: 15%; } #p-RD { bottom: 25%; right: 15%; }
         #p-LW { top: 25%; left: 15%; } #p-C { top: 15%; left: 44%; } #p-RW { top: 25%; right: 15%; }
 
-        /* PACK ANIMATION */
+        /* PACKS */
         #pack-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 6000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .pack-card { background: linear-gradient(135deg, #1e293b, #0f172a); border: 3px solid var(--accent); padding: 40px; border-radius: 20px; text-align: center; min-width: 250px; }
-        #pack-lvl { font-size: 5rem; font-weight: 900; color: var(--accent); margin: 0; }
-        #pack-name { font-size: 1.5rem; letter-spacing: 2px; margin: 10px 0; min-height: 1.6em; }
+        .pack-card { background: linear-gradient(135deg, #1e293b, #0f172a); border: 3px solid var(--accent); padding: 40px; border-radius: 20px; text-align: center; }
 
-        #bot-nav { display: none; position: fixed; bottom: 0; width: 100%; height: 80px; background: #0a0e14; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #333; z-index: 1000; }
-        .nav-item { font-size: 1.5rem; opacity: 0.3; cursor: pointer; }
+        /* NAV */
+        #bot-nav { display: none; position: fixed; bottom: 0; width: 100%; height: 80px; background: #0a0e14; border-top: 1px solid #333; z-index: 1000; display: flex; justify-content: space-around; align-items: center; }
+        .nav-item { font-size: 1.5rem; opacity: 0.3; }
         .nav-item.active { opacity: 1; color: var(--accent); }
+
+        #setup-overlay { position: fixed; inset: 0; background: #0a0e14; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        #setup-overlay input { background: #1a202c; border: 2px solid var(--accent); color: white; padding: 15px; border-radius: 12px; margin: 20px 0; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="setup-overlay" style="display:none;">
-        <h1 style="color:var(--accent);">FLORBALOVÝ MANAŽER</h1>
-        <input type="text" id="team-input" placeholder="Název tvého týmu" maxlength="15">
-        <button onclick="confirmTeamName()">ZALOŽIT KLUB</button>
+        <h1 style="color:var(--accent); letter-spacing: 2px;">MANAGER STUDIO</h1>
+        <input type="text" id="team-input" placeholder="NÁZEV TVÉHO KLUBU" maxlength="15">
+        <button onclick="confirmTeamName()">ZAČÍT KARIÉRU</button>
     </div>
 
     <div id="top-ui">
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:8px;">
             <div class="stat-badge">🪙 <span id="ui-money">0</span></div>
-            <div class="stat-badge">LVL <span id="ui-lvl">0</span></div>
+            <div class="stat-badge">👥 <span id="ui-pcount">0</span></div>
+            <div class="stat-badge" style="color:var(--accent)">LVL <span id="ui-lvl">0</span></div>
         </div>
         <div class="stat-badge" id="ui-team-name">Klub</div>
     </div>
 
     <div id="scr-match" class="screen">
-        <h3>Ligová sezóna</h3>
+        <h3 id="league-info">Ligový zápas</h3>
         <div id="match-area">
-            <div style="position:absolute; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); padding:5px 20px; border-radius:30px; font-weight:900; z-index:100;">
+            <div style="position:absolute; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); padding:5px 20px; border-radius:30px; font-weight:900; z-index:100; border:1px solid var(--accent);">
                 <span id="score-h" style="color:var(--blue)">0</span> : <span id="score-a" style="color:var(--red)">0</span>
             </div>
             <div class="goal-net" style="left:0; border-left:none;"></div>
@@ -82,12 +84,12 @@
     </div>
 
     <div id="scr-sleep" class="screen">
-        <h3>Regenerace týmu</h3>
+        <h3>Kabina / Regenerace</h3>
         <div id="hraci-list"></div>
     </div>
 
     <div id="scr-profile" class="screen">
-        <h3>Aktivní sestava</h3>
+        <h3>Sestava týmu</h3>
         <div class="field">
             <div id="p-GK" class="pos-btn" onclick="openSelect('GK')">GK</div>
             <div id="p-LW" class="pos-btn" onclick="openSelect('LW')">LW</div>
@@ -100,26 +102,26 @@
     </div>
 
     <div id="scr-shop" class="screen">
-        <h3>Draftovací Centrum</h3>
+        <h3>Drafty & Balíčky</h3>
         <div class="card">
-            <p>Bronzový (Lvl 1-9)</p>
-            <button onclick="buyPack('bronz')">KOUPIT (5 000 🪙)</button>
+            <p>Bronzový Draft (Lvl 1-9)</p>
+            <button onclick="buyPack('bronz')">5 000 🪙</button>
         </div>
         <div class="card">
-            <p>Stříbrný (Lvl 10-19)</p>
-            <button onclick="buyPack('silver')" style="color:#000; background:#94a3b8;">KOUPIT (10 000 🪙)</button>
+            <p>Stříbrný Draft (Lvl 10-19)</p>
+            <button onclick="buyPack('silver')" style="background:#94a3b8;">10 000 🪙</button>
         </div>
         <div class="card">
-            <p>Zlatý (Lvl 20-29)</p>
-            <button onclick="buyPack('gold')" style="color:#000; background:#fde047;">KOUPIT (15 000 🪙)</button>
+            <p>Zlatý Draft (Lvl 20-29)</p>
+            <button onclick="buyPack('gold')" style="background:#fde047;">15 000 🪙</button>
         </div>
     </div>
 
     <div id="pack-overlay">
         <div class="pack-card">
-            <p id="pack-lvl">?</p>
-            <div id="pack-name">...</div>
-            <button id="pack-btn" style="display:none;" onclick="closePack()">PŘEVZÍT HRÁČE</button>
+            <p id="pack-lvl" style="font-size:4rem; font-weight:900; color:var(--accent); margin:0;">?</p>
+            <div id="pack-name" style="font-size:1.2rem; margin:20px 0; font-weight:bold;">...</div>
+            <button id="pack-btn" style="display:none;" onclick="closePack()">PŘIDAT DO TÝMU</button>
         </div>
     </div>
 
@@ -131,25 +133,25 @@
     </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('fb_v8_8')) || {
+    let db = JSON.parse(localStorage.getItem('fb_v8_9')) || {
         m: 10000, p: [], lineup: {GK:null,LW:null,C:null,RW:null,LD:null,RD:null},
-        matches: 0, league: [{n:"Tatran",lvl:6,pts:0},{n:"Vítkovice",lvl:8,pts:0}],
+        wins: 0, league: [{n:"Sparta",lvl:6,pts:0},{n:"Chodov",lvl:8,pts:0}],
         lastMatch: 0, teamName: "", firstMatchDone: false
     };
 
-    const names = ["Adam","Vojta","Honza","Filip","Marek","Lukáš","Petr","Matěj","Jakub","David"];
-    const sNames = ["Novák","Svoboda","Marek","Černý","Veselý","Kučera","Procházka","Horák"];
+    const names = ["Filip","Lukáš","Matěj","Adam","Jakub","Tomáš","Petr","David","Honza","Vojta"];
+    const sNames = ["Kysela","Němec","Dvořák","Marek","Horák","Beneš","Konečný","Kříž","Svoboda"];
 
-    function save() { localStorage.setItem('fb_v8_8', JSON.stringify(db)); }
+    function save() { localStorage.setItem('fb_v8_9', JSON.stringify(db)); }
 
     function confirmTeamName() {
         let n = document.getElementById('team-input').value.trim();
-        if(n.length < 3) return alert("Příliš krátké!");
+        if(n.length < 3) return alert("Zadej aspoň 3 znaky!");
         db.teamName = n;
         db.league.push({n: n, lvl: 1, pts: 0, isP: true});
         const pos = ["GK","LW","C","RW","LD","RD"];
         pos.forEach((p, i) => {
-            let h = {id:Date.now()+i, n:names[i]+" "+sNames[i], lvl:1, pos:p, e:100, lastSleep:0, sleepUntil:0};
+            let h = {id:Date.now()+i, n:names[i]+" "+sNames[i], lvl:1, pos:p, e:100};
             db.p.push(h); db.lineup[p] = h.id;
         });
         document.getElementById('setup-overlay').style.display = 'none';
@@ -169,6 +171,7 @@
 
     function updateUI() {
         document.getElementById('ui-money').innerText = db.m.toLocaleString();
+        document.getElementById('ui-pcount').innerText = db.p.length;
         document.getElementById('ui-team-name').innerText = db.teamName || "Klub";
         let sum = 0, count = 0;
         for(let pos in db.lineup) {
@@ -179,38 +182,29 @@
         document.getElementById('ui-lvl').innerText = db.avgLvl;
     }
 
-    // MATCH ENGINE S PRAVDĚPODOBNOSTÍ
+    // MATCH ENGINE
     function calculateWinProb(pLvl, oLvl) {
-        let diff = pLvl - oLvl;
-        if (diff <= -8) return 1;
-        if (diff === -7) return 5;
-        if (diff === -6) return 10;
-        if (diff === -5) return 15;
-        if (diff === -4) return 20;
-        if (diff === -3) return 25;
-        if (diff === -2) return 30;
-        if (diff === -1) return 50;
-        if (diff === 0) return 67;
-        if (diff === 1) return 75;
-        if (diff >= 2) return 99;
-        return 50;
+        let d = pLvl - oLvl;
+        if(d <= -8) return 1; if(d === -7) return 5; if(d === -6) return 10;
+        if(d === -5) return 15; if(d === -4) return 20; if(d === -3) return 25;
+        if(d === -2) return 30; if(d === -1) return 50; if(d === 0) return 67;
+        if(d === 1) return 75; return 99;
     }
 
     function initMatch() {
-        if(db.p.length < 6) return alert("Potřebuješ 6 hráčů!");
+        if(db.p.length < 6) return alert("Máš málo hráčů!");
         let oppLvl = (db.avgLvl < 10) ? Math.floor(Math.random()*8)+1 : Math.floor(Math.random()*15)+8;
         let prob = calculateWinProb(db.avgLvl, oppLvl);
         let roll = Math.random() * 100;
         
-        // Rozhodnutí o výsledku (vždy výhra v prvním zápase)
         let result = "loss";
         if(!db.firstMatchDone || roll < prob) result = "win";
-        else if(roll < prob + 15) result = "draw";
+        else if(roll < prob + 10) result = "draw";
 
-        startMatchAnimation(result, oppLvl);
+        startMatchAnimation(result);
     }
 
-    function startMatchAnimation(finalResult, oppLvl) {
+    function startMatchAnimation(finalResult) {
         db.lastMatch = Date.now(); save(); updateTimers();
         document.getElementById('match-area').style.display = 'block';
         document.getElementById('btn-play').style.display = 'none';
@@ -227,61 +221,64 @@
 
         let timer = 0;
         let int = setInterval(() => {
-            dots.forEach((d, i) => {
-                d.style.left = Math.random()*90 + "%";
-                d.style.top = Math.random()*80 + "%";
-            });
+            dots.forEach((d) => { d.style.left = Math.random()*90 + "%"; d.style.top = Math.random()*80 + "%"; });
             ball.style.left = dots[Math.floor(Math.random()*12)].style.left;
             ball.style.top = dots[Math.floor(Math.random()*12)].style.top;
-            
-            // Náhodné góly v průběhu pro efekt
             if(Math.random() < 0.1) Math.random() > 0.5 ? sh++ : sa++;
-            document.getElementById('score-h').innerText = sh;
-            document.getElementById('score-a').innerText = sa;
+            document.getElementById('score-h').innerText = sh; document.getElementById('score-a').innerText = sa;
 
             if(++timer > 20) {
                 clearInterval(int);
-                // Korekce výsledku podle propočtu
-                if(finalResult === "win") { sh = Math.max(sh, sa + 1); if(sh===sa) sh++; }
+                if(finalResult === "win") { sh = Math.max(sh, sa + 1); if(sh==sa) sh++; }
                 else if(finalResult === "draw") sh = sa;
-                else { sa = Math.max(sa, sh + 1); if(sa===sh) sa++; }
-                
-                document.getElementById('score-h').innerText = sh;
-                document.getElementById('score-a').innerText = sa;
+                else { sa = Math.max(sa, sh + 1); if(sa==sh) sa++; }
+                document.getElementById('score-h').innerText = sh; document.getElementById('score-a').innerText = sa;
                 finishMatch(sh, sa);
             }
-        }, 400);
+        }, 300);
     }
 
     function finishMatch(sh, sa) {
         let pT = db.league.find(x => x.isP);
-        if(sh > sa) { db.m += 1500; pT.pts += 3; db.firstMatchDone = true; alert("VÝHRA!"); }
-        else if(sh === sa) { db.m += 500; pT.pts += 1; alert("REMIZA"); }
-        else { alert("PROHRA"); }
+        let bonusText = "";
+        
+        // Bonus za vstupné (10% šance na 10 000)
+        if(Math.random() < 0.10) {
+            db.m += 10000;
+            bonusText = "\n\n🔥 VYPRODÁNO! Získáváš 10 000 🪙 za vstupné!";
+        }
+
+        if(sh > sa) { 
+            db.m += 750; pT.pts += 3; db.firstMatchDone = true; 
+            alert("VÝHRA! Získal jsi 750 🪙." + bonusText); 
+        } else {
+            alert("BEZ BODU. Výhra byla blízko." + bonusText);
+        }
+
         document.getElementById('match-area').style.display = 'none';
         document.getElementById('btn-play').style.display = 'block';
         save(); updateUI(); renderLeague();
     }
 
-    // PACK ANIMACE
+    // PACKS
     function buyPack(type) {
         let cost = type==='bronz'?5000 : type==='silver'?10000 : 15000;
-        if(db.m < cost) return alert("Málo peněz!");
+        if(db.m < cost) return alert("Chybí ti zlatáky!");
         db.m -= cost;
         
         let range = type==='bronz'?[1,9] : type==='silver'?[10,19] : [20,29];
         let lvl = Math.floor(Math.random()*(range[1]-range[0]+1))+range[0];
         let name = names[Math.floor(Math.random()*names.length)] + " " + sNames[Math.floor(Math.random()*sNames.length)];
         
-        window.tempH = {id:Date.now(), n:name, lvl:lvl, pos:["LW","C","RW","LD","RD"][Math.floor(Math.random()*5)], e:100, lastSleep:0, sleepUntil:0};
+        window.tempH = {id:Date.now(), n:name, lvl:lvl, pos:["LW","C","RW","LD","RD","GK"][Math.floor(Math.random()*6)], e:100};
         
         document.getElementById('pack-overlay').style.display = 'flex';
         document.getElementById('pack-lvl').innerText = lvl;
-        document.getElementById('pack-name').innerText = name[0] + "..."; // První písmeno
+        document.getElementById('pack-name').innerText = name[0] + "...";
         document.getElementById('pack-btn').style.display = 'none';
 
         setTimeout(() => {
-            document.getElementById('pack-name').innerText = name; // Celé jméno
+            document.getElementById('pack-name').innerText = name + " (" + window.tempH.pos + ")";
             document.getElementById('pack-btn').style.display = 'block';
         }, 1200);
     }
@@ -296,7 +293,7 @@
         let div = document.getElementById('liga-tabulka');
         let html = `<table><tr><th>Tým</th><th>Body</th></tr>`;
         db.league.sort((a,b)=>b.pts-a.pts).forEach(t => {
-            html += `<tr style="${t.isP?'color:var(--accent)':''}"><td>${t.n}</td><td>${t.pts}</td></tr>`;
+            html += `<tr style="${t.isP?'color:var(--accent); font-weight:bold':''}"><td>${t.n}</td><td>${t.pts}</td></tr>`;
         });
         div.innerHTML = html + "</table>";
     }
@@ -304,24 +301,24 @@
     function renderField() {
         for(let pos in db.lineup) {
             let h = db.p.find(x => x.id === db.lineup[pos]);
-            document.getElementById('p-'+pos).innerHTML = h ? `<b>${h.lvl}</b>` : pos;
+            document.getElementById('p-'+pos).innerHTML = h ? `<b style="color:var(--accent)">${h.lvl}</b>` : pos;
         }
     }
 
     function openSelect(pos) {
         let div = document.getElementById('select-box');
-        div.innerHTML = `<div class="card"><h3>${pos}</h3>`;
-        db.p.filter(x => x.pos === pos || (pos==='GK' && x.pos==='GK')).forEach(h => {
+        div.innerHTML = `<div class="card"><h3>Vyber pro ${pos}</h3>`;
+        db.p.filter(x => x.pos === pos).forEach(h => {
             div.innerHTML += `<button onclick="setPos('${pos}', ${h.id})" style="margin:4px 0;">${h.n} (Lvl ${h.lvl})</button>`;
         });
-        div.innerHTML += `<button onclick="this.parentElement.remove()" style="background:none;">Zavřít</button></div>`;
+        div.innerHTML += `<button onclick="this.parentElement.remove()" style="background:none; margin-top:10px;">ZAVŘÍT</button></div>`;
     }
     function setPos(pos, id) { db.lineup[pos] = id; renderField(); save(); document.getElementById('select-box').innerHTML=''; }
 
     function updateTimers() {
         let b = document.getElementById('btn-play');
         let rem = Math.ceil((db.lastMatch + 60000 - Date.now()) / 1000);
-        if(rem > 0) { b.disabled = true; b.innerText = `PŘÍPRAVA ${rem}S`; }
+        if(rem > 0) { b.disabled = true; b.innerText = `ODPOČINEK ${rem}S`; }
         else { b.disabled = false; b.innerText = "ODEHRÁT ZÁPAS"; }
     }
 
