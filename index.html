@@ -3,19 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager v9.3 Ultimate</title>
+    <title>Floorball Manager v9.4 Ultimate</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --bg: #05080f; --surface: rgba(19, 28, 42, 0.7); --surface-border: rgba(255, 255, 255, 0.1);
+            --bg: #05080f; --surface: rgba(19, 28, 42, 0.85); --surface-border: rgba(255, 255, 255, 0.1);
             --accent: #00ff88; --text: #e2e8f0; --text-muted: #94a3b8;
             --blue: #3b82f6; --red: #ef4444; --gold: #fbbf24; --gold-glow: rgba(251, 191, 36, 0.4);
             --field: linear-gradient(180deg, #022c22 0%, #064e3b 100%);
             /* Rarities */
             --r-basic: #94a3b8; --r-medium: #22c55e; --r-rare: #3b82f6; --r-epic: #a855f7;
         }
-        body { font-family: 'Montserrat', sans-serif; color: var(--text); margin: 0; background: var(--bg); overflow-x: hidden; user-select: none; }
-        body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 50% 50%, rgba(0, 255, 136, 0.03) 0%, transparent 50%); z-index: -1; pointer-events: none; }
+        body { font-family: 'Montserrat', sans-serif; color: var(--text); margin: 0; background: var(--bg); overflow-x: hidden; user-select: none; background-attachment: fixed; }
+        
+        /* UNIKÁTNÍ POZADÍ PRO SEKCE */
+        #scr-match { background: radial-gradient(circle at center, #064e3b 0%, #020617 100%); }
+        #scr-sleep { background: linear-gradient(135deg, #1e1b4b 0%, #020617 100%); }
+        #scr-profile { background: radial-gradient(circle at top, #1e293b 0%, #020617 100%); }
+        #scr-shop { background: linear-gradient(135deg, #431407 0%, #020617 100%); }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: var(--surface-border); border-radius: 10px; }
@@ -63,20 +68,23 @@
 
         /* MATCH AREA & PLYNULÉ ANIMACE */
         #match-area { width: 100%; height: 30vh; min-height: 240px; border-radius: 16px; position: relative; overflow: hidden; display: none; background: var(--field); border: 2px solid rgba(255,255,255,0.1); margin-bottom: 20px; box-shadow: inset 0 0 50px rgba(0,0,0,0.6); }
+        .center-circle { position: absolute; width: 60px; height: 60px; border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 0; }
+        .center-line { position: absolute; width: 2px; height: 100%; background: rgba(255,255,255,0.2); top: 0; left: 50%; transform: translateX(-50%); z-index: 0; }
         .goal-net { position: absolute; width: 20px; height: 60px; border: 2px solid rgba(255,255,255,0.5); top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.2); z-index: 1; }
         .crease { position: absolute; width: 40px; height: 80px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; top: 50%; transform: translateY(-50%); z-index: 0; }
-        .player-dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; z-index: 5; transition: top 1.5s ease-in-out, left 1.5s ease-in-out; box-shadow: 0 4px 8px rgba(0,0,0,0.8); }
+        .player-dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; z-index: 5; transition: top 1s linear, left 1s linear; box-shadow: 0 4px 8px rgba(0,0,0,0.8); }
         .gk-dot { border-radius: 3px; width: 16px; height: 16px; border-color: var(--gold); }
-        .ball { position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; z-index: 10; transition: top 0.3s linear, left 0.3s linear; box-shadow: 0 0 10px #fff; }
+        .ball { position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; z-index: 10; transition: top 0.4s linear, left 0.4s linear; box-shadow: 0 0 10px #fff; }
 
         /* RARITY BADGES */
         .rarity-badge { font-size: 0.6rem; font-weight: 900; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); letter-spacing: 1px; }
         
+        .tactical-field { width: 100%; height: 280px; background: rgba(255,255,255,0.02); border: 2px solid var(--surface-border); border-radius: 16px; position: relative; overflow: hidden; background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='10' fill='none' stroke='white' stroke-opacity='0.1'/%3E%3C/svg%3E"); }
         .pos-slot { position: absolute; width: 56px; height: 56px; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 10; }
         .pos-avatar { width: 44px; height: 44px; border-radius: 50%; background: #000; border: 2px solid var(--surface-border); overflow: hidden; display: flex; justify-content: center; align-items: flex-end; position: relative; }
         .pos-avatar img { width: 90%; height: 90%; }
         .pos-lvl { position: absolute; bottom: -8px; background: var(--accent); color: #000; font-size: 0.7rem; font-weight: 900; padding: 2px 6px; border-radius: 8px; border: 2px solid var(--field); }
-        .pos-label { font-size: 0.6rem; font-weight: 700; color: rgba(255,255,255,0.6); margin-top: 12px; }
+        .pos-label { font-size: 0.6rem; font-weight: 700; color: rgba(255,255,255,0.6); margin-top: 12px; text-shadow: 1px 1px 2px #000; }
 
         #p-GK { top: 85%; left: 50%; } #p-LD { top: 65%; left: 25%; } #p-RD { top: 65%; left: 75%; }
         #p-LW { top: 35%; left: 20%; } #p-C { top: 40%; left: 50%; } #p-RW { top: 35%; left: 80%; }
@@ -111,15 +119,14 @@
                 <span id="ui-trophies">0</span>
             </div>
         </div>
-        <div class="stat-badge" style="color:var(--accent); text-shadow:0 0 8px rgba(0,255,136,0.3);">LVL <span id="ui-lvl">0</span></div>
+        <div class="stat-badge" style="color:var(--accent); text-shadow:0 0 8px rgba(0,255,136,0.3);">SÍLA <span id="ui-lvl">0</span></div>
     </div>
 
     <div id="tr-overlay">
         <div class="tr-header">CESTA SLÁVY 🏆</div>
         <button onclick="document.getElementById('tr-overlay').style.display='none'" style="margin-bottom:20px; background:var(--surface-border); color:white;">ZAVŘÍT</button>
         <div class="tr-track-container" id="tr-scroll">
-            <div class="tr-nodes" id="tr-list">
-                </div>
+            <div class="tr-nodes" id="tr-list"></div>
         </div>
     </div>
 
@@ -143,15 +150,22 @@
                 </div>
                 <div class="tv-timer" id="match-timer">00:00</div>
             </div>
+            <div class="center-line"></div>
+            <div class="center-circle"></div>
             <div class="crease" style="left:-15px;"></div>
             <div class="goal-net" style="left:0; border-left:none; border-radius:0 6px 6px 0;"></div>
             <div class="crease" style="right:-15px;"></div>
             <div class="goal-net" style="right:0; border-right:none; border-radius:6px 0 0 6px;"></div>
+            
             <div id="m-ball" class="ball"></div>
             <div id="players-layer"></div>
         </div>
         
         <button id="btn-play" onclick="initMatch()">ZAHÁJIT ZÁPAS</button>
+        <div id="match-cooldown-ui" style="display:none; text-align:center; margin-top:15px;">
+            <div style="color:var(--text-muted); font-size:0.8rem; font-weight:700; text-transform:uppercase;">Regenerace týmu</div>
+            <div style="font-family:'Orbitron', sans-serif; font-size:1.5rem; color:var(--accent); text-shadow:0 0 10px rgba(0,255,136,0.3); margin-top:5px;"><span id="cd-timer">30</span>s</div>
+        </div>
         
         <div class="card" style="margin-top:20px; padding:0; overflow:hidden;">
             <div style="padding: 15px 20px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--surface-border);"><h3 style="margin:0; border:none; padding:0;">Ligová tabulka</h3></div>
@@ -161,13 +175,13 @@
 
     <div id="scr-sleep" class="screen">
         <h3>Kabina a Únava</h3>
-        <p style="font-size:0.85rem; color:var(--text-muted);">Pošli unavené hráče na Spáneček.</p>
+        <p style="font-size:0.85rem; color:var(--text-muted);">Pošli unavené hráče na Spáneček. Zde také vidíš jejich vybavení.</p>
         <div id="hraci-list"></div>
     </div>
 
     <div id="scr-profile" class="screen">
         <h3>Taktická sestava</h3>
-        <div class="tactical-field" style="height:280px;">
+        <div class="tactical-field">
             <div class="pos-slot" id="p-GK" onclick="openSelect('GK')"><div class="pos-avatar" id="av-GK"></div><div class="pos-lvl" id="lvl-GK">-</div><div class="pos-label">GÓLMAN</div></div>
             <div class="pos-slot" id="p-LD" onclick="openSelect('LD')"><div class="pos-avatar" id="av-LD"></div><div class="pos-lvl" id="lvl-LD">-</div><div class="pos-label">LEVÝ OBR</div></div>
             <div class="pos-slot" id="p-RD" onclick="openSelect('RD')"><div class="pos-avatar" id="av-RD"></div><div class="pos-lvl" id="lvl-RD">-</div><div class="pos-label">PRAVÝ OBR</div></div>
@@ -178,10 +192,11 @@
         <div id="select-box"></div>
 
         <h3 style="margin-top:30px;">Inventář (Batoh)</h3>
+        <p style="font-size:0.75rem; color:var(--text-muted);">Kliknutím na předmět jej přiřadíš hráči.</p>
         <div class="bag-grid" id="bag-ui"></div>
         
         <div id="use-item-ui" style="display:none; margin-top:20px;" class="card">
-            <h3 style="border-color:var(--blue)">Použít Energy Drink 🥤</h3>
+            <h3 id="use-item-title" style="border-color:var(--blue)">Použít Předmět</h3>
             <div id="drink-targets"></div>
             <button onclick="document.getElementById('use-item-ui').style.display='none'" style="margin-top:10px; background:var(--surface-border); color:white;">ZRUŠIT</button>
         </div>
@@ -206,7 +221,13 @@
         <div class="card" style="border-color: #fde047; background: linear-gradient(135deg, rgba(253, 224, 71, 0.1), transparent);"><button id="btn-pack-gold" onclick="buyPack('gold')" style="background:#fde047; color:black;">ZLATÝ BALÍČEK (15 000)</button></div>
         
         <h3 style="margin-top:30px;">Vybavení</h3>
-        <div class="card" style="border-color: var(--accent); background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), transparent);"><button onclick="buyStickPack()" style="background:var(--accent); color:black;">BALÍČEK FLORBALEK (3 000)</button></div>
+        <div class="card" style="border-color: var(--accent); background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), transparent);">
+            <div style="text-align:center; margin-bottom:15px;">
+                <b>FREEZ Balíček</b><br>
+                <span style="font-size:0.75rem; color:var(--text-muted);">Obsahuje FREEZ florbalku (Lvl 1-9)<br>Vylepšuje statistiky jednoho hráče.</span>
+            </div>
+            <button onclick="buyStickPack()" style="background:var(--accent); color:black;">KOUPIT BALÍČEK (3 000 🪙)</button>
+        </div>
     </div>
 
     <div id="pack-overlay">
@@ -235,26 +256,28 @@
     </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('fb_v9_3')) || {
+    let db = JSON.parse(localStorage.getItem('fb_v9_4')) || {
         m: 10000, trophies: 0, trClaimed: [], p: [], lineup: {GK:null,LD:null,RD:null,LW:null,C:null,RW:null},
         b: Array(20).fill(null), sticks: [], shop: { bronz: true, silver: true, gold: true, drink: false, nextRefresh: 0 },
         league: [{n:"Tatran",lvl:6,pts:0},{n:"Boleslav",lvl:8,pts:0}],
-        lastMatch: 0, teamName: "", firstMatchDone: false
+        lastMatchEnd: 0, teamName: "", firstMatchDone: false
     };
 
-    // Migrace
-    if(db.p.length === 0 && localStorage.getItem('fb_v9_2')) {
-        let stareDb = JSON.parse(localStorage.getItem('fb_v9_2'));
-        stareDb.sticks = stareDb.sticks || []; stareDb.shop.drink = false; db = stareDb; save();
+    // Nové Buff Výpočty pro florbalky (index = level)
+    const stickBuffs = [0, 5, 8, 10, 12, 14, 16, 18, 20, 25];
+
+    // Migrace pro starší databáze
+    if(db.p.length === 0 && localStorage.getItem('fb_v9_3')) {
+        db = JSON.parse(localStorage.getItem('fb_v9_3'));
+        db.lastMatchEnd = 0; save();
     }
 
     const names = ["Filip","Lukáš","Matěj","Adam","Jakub","Tomáš","Petr","David","Honza","Vojta"];
     const sNames = ["Kysela","Němec","Dvořák","Marek","Horák","Beneš","Konečný","Kříž","Svoboda"];
 
-    function save() { localStorage.setItem('fb_v9_3', JSON.stringify(db)); }
+    function save() { localStorage.setItem('fb_v9_4', JSON.stringify(db)); }
     function getAvatarUrl(seed) { return `https://api.dicebear.com/9.x/adventurer/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`; }
 
-    // Systém rarit
     function getRarity(lvl) {
         if(lvl < 10) return {n:'BASIC', c:'var(--r-basic)'};
         if(lvl < 20) return {n:'MEDIUM', c:'var(--r-medium)'};
@@ -269,7 +292,7 @@
         const pos = ["GK","LD","RD","LW","C","RW"];
         pos.forEach((p, i) => {
             let id = Date.now() + i;
-            db.p.push({id: id, n: names[i]+" "+sNames[i], lvl: 1, pos: p, e: 100, lastSleep: 0, sleepUntil: 0});
+            db.p.push({id: id, n: names[i]+" "+sNames[i], lvl: 1, pos: p, e: 100, lastSleep: 0, sleepUntil: 0, stick: null});
             db.lineup[p] = id;
         });
         document.getElementById('setup-overlay').style.display = 'none'; save(); window.location.reload();
@@ -292,16 +315,21 @@
         document.getElementById('ui-money').innerText = db.m.toLocaleString();
         document.getElementById('ui-trophies').innerText = db.trophies;
         document.getElementById('tv-team-h').innerText = db.teamName ? db.teamName.substring(0,3).toUpperCase() : "DOM";
+        
         let sum = 0, count = 0;
         for(let pos in db.lineup) {
             let h = db.p.find(x => x.id === db.lineup[pos]);
-            if(h) { sum += h.lvl; count++; }
+            if(h) { 
+                let b = h.stick ? stickBuffs[h.stick.lvl] : 0;
+                sum += h.lvl * (1 + b/100); 
+                count++; 
+            }
         }
         db.avgLvl = count === 6 ? Math.round(sum/6) : 0;
         document.getElementById('ui-lvl').innerText = db.avgLvl;
     }
 
-    // MATCH LOGIKA & PLYNULÁ ANIMACE
+    // MATCH LOGIKA NA 30 SEKUND
     function initMatch() {
         if(db.p.length < 6) return alert("Chybí ti hráči!");
         for(let pos in db.lineup) if(!db.lineup[pos]) return alert("Vyplň celou sestavu!");
@@ -314,7 +342,7 @@
         if(isSleeping) return alert("Některý hráč v sestavě SPÍ! Počkej nebo vystřídej.");
 
         let oppLvl = (db.avgLvl < 10) ? Math.floor(Math.random()*8)+1 : Math.floor(Math.random()*15)+8;
-        document.getElementById('opp-lvl-display').innerText = `Soupeř LVL: ${oppLvl}`;
+        document.getElementById('opp-lvl-display').innerText = `Soupeř Síla: ${oppLvl}`;
         
         let diff = db.avgLvl - oppLvl;
         let prob = diff<=-8 ? 1 : diff===-7 ? 5 : diff===-6 ? 10 : diff===-5 ? 15 : diff===-4 ? 20 : diff===-3 ? 25 : diff===-2 ? 30 : diff===-1 ? 50 : diff===0 ? 67 : diff===1 ? 75 : 99;
@@ -340,39 +368,37 @@
             layer.appendChild(d); dots.push(d);
         }
 
-        let ticks = 0; document.getElementById('match-timer').innerText = "00:00";
+        let matchTime = 30; // Přesně 30 sekund
+        document.getElementById('match-timer').innerText = "00:30";
         
-        // Plynulejší interval pro pohyb hráčů
         let moveInt = setInterval(() => {
-            ticks++;
-            let matchSecs = Math.floor(ticks / 2); // 1 tick = 0.5s zápasového času (rychlejší časomíra)
-            document.getElementById('match-timer').innerText = `00:${matchSecs<10?'0':''}${matchSecs}`;
+            matchTime--;
+            document.getElementById('match-timer').innerText = `00:${matchTime<10?'0':''}${matchTime}`;
 
-            // Plynulý pohyb po poli
+            // Plynulý přesun
             dots.forEach((d, idx) => {
                 if(idx === 0) { d.style.left = (2 + Math.random()*5) + "%"; d.style.top = (40 + Math.random()*20) + "%"; } 
                 else if(idx === 6) { d.style.left = (90 + Math.random()*5) + "%"; d.style.top = (40 + Math.random()*20) + "%"; } 
                 else { d.style.left = (15 + Math.random()*70) + "%"; d.style.top = (10 + Math.random()*80) + "%"; }
             });
             
-            // Nahravky (míč se pohybuje rychleji)
             setTimeout(() => {
                 let ballHolder = dots[Math.floor(Math.random()*12)];
                 ball.style.left = ballHolder.style.left; ball.style.top = ballHolder.style.top;
-            }, 300); // zpoždění pro nahrávku
+            }, 200);
 
-            if(Math.random() < 0.1) Math.random() > 0.5 ? sh++ : sa++;
+            if(Math.random() < 0.2) Math.random() > 0.5 ? sh++ : sa++;
             document.getElementById('score-h').innerText = sh; document.getElementById('score-a').innerText = sa;
 
-            if(ticks >= 120) { // 60 sekund simulace
+            if(matchTime <= 0) {
                 clearInterval(moveInt);
                 if(finalResult === "win") { sh = Math.max(sh, sa + 1); if(sh==sa) sh++; }
                 else if(finalResult === "draw") sh = sa;
                 else { sa = Math.max(sa, sh + 1); if(sa==sh) sa++; }
                 document.getElementById('score-h').innerText = sh; document.getElementById('score-a').innerText = sa;
-                setTimeout(() => finishMatch(sh, sa), 1500);
+                setTimeout(() => finishMatch(sh, sa), 1000);
             }
-        }, 1500); // 1.5s na každý cyklus běhu
+        }, 1000); // Krok přesně 1 sekunda
     }
 
     function finishMatch(sh, sa) {
@@ -390,93 +416,29 @@
 
         db.p.forEach(h => { if(Object.values(db.lineup).includes(h.id)) h.e = Math.max(0, h.e - (Math.floor(Math.random() * 9) + 1)); });
 
+        db.lastMatchEnd = Date.now(); // Začátek cooldownu
+
         document.getElementById('match-area').style.display = 'none';
-        document.getElementById('btn-play').style.display = 'block';
         alert(extraText); save(); updateUI(); renderLeague();
     }
 
-    // TROPHY ROAD 2.0 (PROGRESS BAR)
-    const trMilestones = [
-        { t: 10, type: 'pack', min:2, max:7, desc: "Balíček\n(Lvl 2-7)" },
-        { t: 50, type: 'coins', val: 5000, desc: "5 000 🪙" },
-        { t: 75, type: 'coins', val: 200, desc: "200 🪙" },
-        { t: 100, type: 'pack', min:11, max:11, desc: "Hráč\nLVL 11" },
-        { t: 125, type: 'coins', val: 500, desc: "500 🪙" },
-        { t: 150, type: 'pack', min:2, max:5, desc: "Balíček\n(Lvl 2-5)" },
-        { t: 175, type: 'player', lvl:2, pos:'GK', desc: "Gólman\nLVL 2" },
-        { t: 200, type: 'player', lvl:4, pos:null, desc: "Hráč\nLVL 4" },
-        { t: 250, type: 'coins', val: 800, desc: "800 🪙" },
-        { t: 300, type: 'pack', min:2, max:9, desc: "Balíček\n(Lvl 2-9)" }
-    ];
-
-    function openTrophyRoad() {
-        let list = document.getElementById('tr-list'); list.innerHTML = "";
-        
-        // Background line
-        let bgLine = document.createElement('div'); bgLine.className = 'tr-line';
-        let fillLine = document.createElement('div'); fillLine.className = 'tr-line-fill';
-        
-        let maxT = trMilestones[trMilestones.length-1].t;
-        let progress = Math.min(100, (db.trophies / maxT) * 100);
-        fillLine.style.width = `${progress}%`;
-        bgLine.appendChild(fillLine);
-        list.appendChild(bgLine);
-
-        trMilestones.forEach(m => {
-            let isClaimed = db.trClaimed.includes(m.t);
-            let isUnlocked = db.trophies >= m.t;
-            
-            let node = document.createElement('div');
-            node.className = `tr-node ${isUnlocked ? 'unlocked' : ''} ${isClaimed ? 'claimed' : ''}`;
-            
-            let icon = m.type === 'coins' ? '🪙' : m.type === 'pack' ? '📦' : '👤';
-            
-            node.innerHTML = `
-                <div class="tr-circle" onclick="claimTrophy(${m.t}, ${isUnlocked}, ${isClaimed})">${icon}</div>
-                <div class="tr-req">${m.t} 🏆</div>
-                <div class="tr-desc">${m.desc.replace('\n', '<br>')}</div>
-            `;
-            list.appendChild(node);
-        });
-        document.getElementById('tr-overlay').style.display = 'flex';
-        // Scroll k aktuálnímu postupu
-        setTimeout(() => {
-            let scrollEl = document.getElementById('tr-scroll');
-            scrollEl.scrollLeft = (scrollEl.scrollWidth * (progress/100)) - (window.innerWidth/2);
-        }, 100);
-    }
-
-    function claimTrophy(amount, unlocked, claimed) {
-        if(!unlocked) return alert("Ještě nemáš dostatek pohárků!");
-        if(claimed) return alert("Už sis tohle vyzvednul!");
-
-        db.trClaimed.push(amount);
-        document.getElementById('tr-overlay').style.display = 'none';
-        let m = trMilestones.find(x => x.t === amount);
-
-        if(m.type === 'coins') { db.m += m.val; alert(`Získáváš ${m.val} 🪙!`); }
-        else if(m.type === 'pack') { openSpecialPack(m.min, m.max, false); }
-        else if(m.type === 'player') { openSpecificPlayer(m.lvl, m.pos); }
-        
-        save(); updateUI();
-    }
-
+    // OTEVÍRÁNÍ BALÍČKŮ A FLORBALEK
     function generatePlayer(minLvl, maxLvl, specificPos) {
         let lvl = Math.floor(Math.random()*(maxLvl-minLvl+1))+minLvl;
         let id = Date.now();
         let name = names[Math.floor(Math.random()*names.length)] + " " + sNames[Math.floor(Math.random()*sNames.length)];
         let pos = specificPos || ["GK","LD","RD","LW","C","RW"][Math.floor(Math.random()*6)];
-        return {id:id, n:name, lvl:lvl, pos:pos, e:100, lastSleep:0, sleepUntil:0};
+        return {id:id, n:name, lvl:lvl, pos:pos, e:100, lastSleep:0, sleepUntil:0, stick:null};
     }
 
     function openSpecialPack(minLvl, maxLvl, isStick) {
         window.tempType = isStick ? 'stick' : 'player';
         
         if(isStick) {
-            let lvl = Math.floor(Math.random()*39)+1; // Pro rarity
-            let r = getRarity(lvl);
-            window.tempItem = { type: 'stick', name: `Florbalka ${r.n}`, rarity: r };
-            showPackUI("NOVÁ FLORBALKA", "🏒", "?", r, `Florbalka ${r.n}`);
+            let lvl = Math.floor(Math.random()*9)+1; // Omezeno Lvl 1-9 dle zadání
+            let r = getRarity(lvl * 3); // Jen aby to barvilo
+            window.tempItem = { type: 'stick', name: `FREEZ Florbalka`, lvl: lvl, rarity: r };
+            showPackUI("NOVÁ FLORBALKA", "<span style='font-size:4rem'>🏒</span>", lvl, r, `FREEZ (Buff +${stickBuffs[lvl]}%)`);
         } else {
             window.tempItem = generatePlayer(minLvl, maxLvl, null);
             let r = getRarity(window.tempItem.lvl);
@@ -491,14 +453,6 @@
         }
     }
 
-    function openSpecificPlayer(lvl, pos) {
-        window.tempType = 'player';
-        window.tempItem = generatePlayer(lvl, lvl, pos);
-        let r = getRarity(lvl);
-        showPackUI("ZÍSKÁN HRÁČ", `<img src="${getAvatarUrl(window.tempItem.id)}" style="width:100px; height:100px;">`, lvl, r, window.tempItem.n + " (" + window.tempItem.pos + ")");
-        document.getElementById('pack-btn').style.display = 'block';
-    }
-
     function showPackUI(title, faceHtml, lvlText, rarity, nameText) {
         document.getElementById('pack-overlay').style.display = 'flex';
         document.getElementById('pack-title').innerText = title;
@@ -507,7 +461,7 @@
         document.getElementById('pack-lvl').style.color = rarity ? rarity.c : 'var(--gold)';
         
         let rBadge = document.getElementById('pack-rarity');
-        if(rarity) { rBadge.innerText = rarity.n; rBadge.style.color = rarity.c; rBadge.style.borderColor = rarity.c; rBadge.style.display = 'inline-block'; } 
+        if(rarity && window.tempType !== 'stick') { rBadge.innerText = rarity.n; rBadge.style.color = rarity.c; rBadge.style.borderColor = rarity.c; rBadge.style.display = 'inline-block'; } 
         else { rBadge.style.display = 'none'; }
         
         document.getElementById('pack-name').innerText = nameText;
@@ -515,7 +469,10 @@
         document.getElementById('pack-card-ui').style.borderColor = rarity ? rarity.c : 'var(--surface-border)';
         
         if(window.tempType === 'stick') {
-            setTimeout(() => { document.getElementById('pack-btn').style.display = 'block'; }, 1000);
+            document.getElementById('pack-btn').innerText = "PŘIDAT DO BATOHU";
+            setTimeout(() => { document.getElementById('pack-btn').style.display = 'block'; }, 500);
+        } else {
+            document.getElementById('pack-btn').innerText = "PŘIDAT DO TÝMU";
         }
     }
 
@@ -524,10 +481,10 @@
         else if(window.tempType === 'stick') db.sticks.push(window.tempItem);
         
         document.getElementById('pack-overlay').style.display = 'none'; 
-        save(); updateUI(); 
+        save(); updateUI(); renderBag();
     }
 
-    // OBCHOD, BATOH, SPÁNEČEK
+    // OBCHOD, BATOH, PŘIŘAZENÍ FLORBALKY
     function checkShop() {
         let now = Date.now();
         if(now > db.shop.nextRefresh) { 
@@ -577,26 +534,50 @@
             let s = document.createElement('div'); s.className = 'bag-slot';
             if(item) { 
                 s.innerHTML = `${item.icon}<div class="stack-badge">x${item.count}</div>`; 
-                s.onclick = () => { if(item.type==='drink') showDrinkTargets(idx); }; 
+                s.onclick = () => showDrinkTargets(idx); 
             }
             ui.appendChild(s);
         });
         // Render Sticks
-        db.sticks.forEach(st => {
+        db.sticks.forEach((st, idx) => {
             let s = document.createElement('div'); s.className = 'bag-slot';
-            s.innerHTML = `<div class="item-rarity-bar" style="background:${st.rarity.c}"></div>🏒<div style="font-size:0.5rem; margin-top:5px; color:${st.rarity.c}; font-weight:900;">${st.rarity.n}</div>`;
+            s.innerHTML = `<div class="item-rarity-bar" style="background:${st.rarity.c}"></div>🏒<div style="font-size:0.5rem; margin-top:5px; color:${st.rarity.c}; font-weight:900;">LVL ${st.lvl}</div>`;
+            s.onclick = () => showStickTargets(idx);
             ui.appendChild(s);
         });
     }
 
     function showDrinkTargets(slotIdx) {
-        let ui = document.getElementById('use-item-ui'); let list = document.getElementById('drink-targets'); ui.style.display = 'block'; list.innerHTML = "";
+        let ui = document.getElementById('use-item-ui'); let list = document.getElementById('drink-targets'); 
+        ui.style.display = 'block'; document.getElementById('use-item-title').innerText = "Doplnit Energii 🥤"; list.innerHTML = "";
         db.p.forEach(h => {
             let b = document.createElement('div'); b.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; background:rgba(0,0,0,0.3); border-radius:10px; margin-bottom:5px;";
             b.innerHTML = `<div>${h.n} <span style="color:${h.e<50?'var(--red)':'var(--accent)'}">${h.e}%</span></div>`;
             let btn = document.createElement('button'); btn.innerText = "DOPLNIT"; btn.style.cssText = "width:auto; padding:5px 15px;";
             if(h.e >= 100) btn.disabled = true;
             btn.onclick = () => { h.e = 100; db.b[slotIdx].count--; if(db.b[slotIdx].count<=0) db.b[slotIdx] = null; ui.style.display='none'; save(); renderBag(); };
+            b.appendChild(btn); list.appendChild(b);
+        });
+    }
+
+    function showStickTargets(stickIdx) {
+        let stick = db.sticks[stickIdx];
+        let ui = document.getElementById('use-item-ui'); let list = document.getElementById('drink-targets'); 
+        ui.style.display = 'block'; 
+        document.getElementById('use-item-title').innerText = `Vybavit: FREEZ Lvl ${stick.lvl} (+${stickBuffs[stick.lvl]}%)`; 
+        list.innerHTML = "";
+        
+        db.p.forEach(h => {
+            let b = document.createElement('div'); b.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; background:rgba(0,0,0,0.3); border-radius:10px; margin-bottom:5px;";
+            let sInfo = h.stick ? `<br><span style="font-size:0.7rem; color:var(--text-muted);">Aktuálně: Lvl ${h.stick.lvl}</span>` : '';
+            b.innerHTML = `<div><b>${h.n}</b>${sInfo}</div>`;
+            
+            let btn = document.createElement('button'); btn.innerText = "VYBAVIT"; btn.style.cssText = "width:auto; padding:5px 15px; background:var(--accent);";
+            btn.onclick = () => { 
+                if(h.stick) db.sticks.push(h.stick); // Vrať starou do batohu
+                h.stick = db.sticks.splice(stickIdx, 1)[0]; // Dej novou
+                ui.style.display='none'; save(); renderBag(); updateUI(); renderSleep(); 
+            };
             b.appendChild(btn); list.appendChild(b);
         });
     }
@@ -610,12 +591,16 @@
             else if(onC) { btnText = `DALŠÍ ZA ${Math.ceil((h.lastSleep + 600000 - now)/60000)}m`; btnDis = true; } 
             else if(h.e >= 100) { btnText = "MÁ 100 %"; btnDis = true; }
             let r = getRarity(h.lvl);
+            
+            let stickBadge = h.stick ? `<span style="background:var(--accent); color:#000; padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:900; margin-left:5px;">🏒 Lvl ${h.stick.lvl} (+${stickBuffs[h.stick.lvl]}%)</span>` : '';
+            
             div.innerHTML += `<div class="card" style="display:flex; align-items:center; gap:15px; border-color:${isS?'var(--accent)':''}">
                 <img src="${getAvatarUrl(h.id)}" style="width:50px; height:50px; border-radius:50%; background:#000; border:2px solid ${r.c}">
-                <div style="flex-grow:1;"><b>${h.n}</b> <span class="rarity-badge" style="color:${r.c}; border-color:${r.c}">${r.n}</span><br><span style="font-size:0.8rem; color:${h.e<50?'var(--red)':'var(--accent)'};">Energie: ${h.e}%</span></div>
+                <div style="flex-grow:1;"><b>${h.n}</b> <span class="rarity-badge" style="color:${r.c}; border-color:${r.c}">${r.n}</span>${stickBadge}<br><span style="font-size:0.8rem; color:${h.e<50?'var(--red)':'var(--accent)'};">Energie: ${h.e}%</span></div>
                 <button onclick="startSleep(${h.id})" ${btnDis?'disabled':''} style="width:140px; font-size:0.75rem; padding:10px;">${btnText}</button></div>`;
         });
     }
+    
     function startSleep(id) { let h = db.p.find(x => x.id === id); h.e = 100; h.lastSleep = Date.now(); h.sleepUntil = Date.now() + 60000; save(); renderSleep(); }
 
     function renderField() {
@@ -636,13 +621,15 @@
         let div = document.getElementById('select-box'); let html = `<div class="card" style="margin-top:20px; border-color:var(--accent);"><h3>Vyber hráče na pozici ${pos}</h3>`;
         db.p.filter(x => x.pos === pos).forEach(h => {
             let r = getRarity(h.lvl);
+            let sInfo = h.stick ? `🏒 +${stickBuffs[h.stick.lvl]}%` : '';
             html += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); padding:10px; border-radius:10px; margin-bottom:10px; border-left:4px solid ${r.c}">
                 <div style="display:flex; align-items:center; gap:10px;"><img src="${getAvatarUrl(h.id)}" style="width:40px; height:40px; border-radius:50%; background:#000;">
-                <div><b>${h.n}</b> <span style="font-size:0.6rem; color:${r.c}">${r.n}</span><br><span style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">LVL ${h.lvl} | En ${h.e}%</span></div></div>
+                <div><b>${h.n}</b> <span style="font-size:0.6rem; color:${r.c}">${r.n}</span> <span style="font-size:0.6rem; color:var(--accent); font-weight:bold;">${sInfo}</span><br><span style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">Základ LVL ${h.lvl} | En ${h.e}%</span></div></div>
                 <button onclick="setPos('${pos}', ${h.id})" style="width:auto; padding:8px 15px; background:${r.c}; color:#fff">ZVOLIT</button></div>`;
         });
         div.innerHTML = html + `<button onclick="this.parentElement.innerHTML=''" style="background:var(--surface-border); color:white; margin-top:10px;">ZAVŘÍT</button></div>`;
     }
+    
     function setPos(pos, id) { db.lineup[pos] = id; renderField(); save(); document.getElementById('select-box').innerHTML=''; updateUI(); }
 
     function renderLeague() {
@@ -651,13 +638,31 @@
         document.getElementById('liga-tabulka').innerHTML = html + "</table>";
     }
 
+    // Centrální časovač hry
     setInterval(() => {
         let now = Date.now();
         if(now > db.shop.nextRefresh) checkShop();
+        
         let sRem = Math.max(0, Math.ceil((db.shop.nextRefresh - now) / 1000));
         let min = Math.floor(sRem / 60); let sec = sRem % 60;
         document.getElementById('shop-timer').innerText = `DOPLNĚNÍ: 0${min}:${sec<10?'0':''}${sec}`;
+        
         if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep();
+
+        // Match Cooldown Logic
+        if(db.lastMatchEnd > 0) {
+            let matchAreaVisible = document.getElementById('match-area').style.display === 'block';
+            let cdLeft = Math.ceil((db.lastMatchEnd + 30000 - now) / 1000);
+            
+            if(cdLeft > 0 && !matchAreaVisible) {
+                document.getElementById('btn-play').style.display = 'none';
+                document.getElementById('match-cooldown-ui').style.display = 'block';
+                document.getElementById('cd-timer').innerText = cdLeft;
+            } else if (cdLeft <= 0 && !matchAreaVisible) {
+                document.getElementById('btn-play').style.display = 'block';
+                document.getElementById('match-cooldown-ui').style.display = 'none';
+            }
+        }
     }, 1000);
 
     window.onload = () => {
