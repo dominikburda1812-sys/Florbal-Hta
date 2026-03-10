@@ -7,26 +7,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --bg: #05080f; --surface: rgba(19, 28, 42, 0.85); --surface-border: rgba(255, 255, 255, 0.1);
-            --accent: #00ff88; --text: #e2e8f0; --text-muted: #94a3b8;
+            --bg: #0f172a; --surface: rgba(30, 41, 59, 0.85); --surface-border: rgba(255, 255, 255, 0.15);
+            --accent: #00ff88; --text: #f8fafc; --text-muted: #94a3b8;
             --blue: #3b82f6; --red: #ef4444; --gold: #fbbf24; --gold-glow: rgba(251, 191, 36, 0.4);
             --field: linear-gradient(180deg, #022c22 0%, #064e3b 100%);
             /* Rarities */
             --r-basic: #94a3b8; --r-medium: #22c55e; --r-rare: #3b82f6; --r-epic: #a855f7;
         }
-        /* Florbalový vzor na pozadí */
+        
+        /* Vylepšené pozadí hry */
         body { 
             font-family: 'Montserrat', sans-serif; color: var(--text); margin: 0; 
-            background-color: var(--bg); 
-            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 2px, transparent 2px);
-            background-size: 30px 30px;
-            overflow-x: hidden; user-select: none; background-attachment: fixed; 
+            background: linear-gradient(135deg, #0b132b 0%, #1c2541 50%, #0b132b 100%);
+            background-attachment: fixed;
+            overflow-x: hidden; user-select: none; 
         }
         
-        #scr-match { background: radial-gradient(circle at center, rgba(6, 78, 59, 0.5) 0%, #020617 100%); }
-        #scr-sleep { background: linear-gradient(135deg, rgba(30, 27, 75, 0.8) 0%, #020617 100%); }
-        #scr-profile { background: radial-gradient(circle at top, rgba(30, 41, 59, 0.8) 0%, #020617 100%); }
-        #scr-shop { background: linear-gradient(135deg, rgba(67, 20, 7, 0.8) 0%, #020617 100%); }
+        #scr-match { background: radial-gradient(circle at center, rgba(6, 78, 59, 0.3) 0%, transparent 100%); }
+        #scr-sleep { background: linear-gradient(135deg, rgba(30, 27, 75, 0.5) 0%, transparent 100%); }
+        #scr-profile { background: radial-gradient(circle at top, rgba(30, 41, 59, 0.5) 0%, transparent 100%); }
+        #scr-shop { background: linear-gradient(135deg, rgba(67, 20, 7, 0.5) 0%, transparent 100%); }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: var(--surface-border); border-radius: 10px; }
@@ -95,12 +95,25 @@
 
         .rarity-badge { font-size: 0.6rem; font-weight: 900; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); letter-spacing: 1px; }
         
-        .tactical-field { width: 100%; height: 280px; background: rgba(255,255,255,0.02); border: 2px solid var(--surface-border); border-radius: 16px; position: relative; overflow: hidden; background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='10' fill='none' stroke='white' stroke-opacity='0.1'/%3E%3C/svg%3E"); }
+        /* Vylepšené taktické hřiště (florbalový povrch s čarami) */
+        .tactical-field { 
+            width: 100%; height: 280px; 
+            background-color: #0284c7; /* Barva florbalového hřiště */
+            background-image: 
+                linear-gradient(to bottom, transparent 49%, rgba(255,255,255,0.4) 49%, rgba(255,255,255,0.4) 51%, transparent 51%),
+                radial-gradient(circle at 50% 50%, transparent 30px, rgba(255,255,255,0.4) 31px, rgba(255,255,255,0.4) 33px, transparent 34px);
+            background-position: center center;
+            background-size: 100% 100%, 100px 100px;
+            background-repeat: no-repeat;
+            border: 3px solid rgba(255,255,255,0.2); 
+            border-radius: 16px; position: relative; overflow: hidden; 
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
+        }
         .pos-slot { position: absolute; width: 56px; height: 56px; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 10; }
         .pos-avatar { width: 44px; height: 44px; border-radius: 50%; background: #000; border: 2px solid var(--surface-border); overflow: hidden; display: flex; justify-content: center; align-items: flex-end; position: relative; }
         .pos-avatar img { width: 90%; height: 90%; }
         .pos-lvl { position: absolute; bottom: -8px; background: var(--accent); color: #000; font-size: 0.7rem; font-weight: 900; padding: 2px 6px; border-radius: 8px; border: 2px solid var(--field); }
-        .pos-label { font-size: 0.6rem; font-weight: 700; color: rgba(255,255,255,0.6); margin-top: 12px; text-shadow: 1px 1px 2px #000; }
+        .pos-label { font-size: 0.65rem; font-weight: 900; color: #fff; margin-top: 12px; text-shadow: 1px 1px 3px #000, 0 0 5px #000; }
 
         #p-GK { top: 85%; left: 50%; } #p-LD { top: 65%; left: 25%; } #p-RD { top: 65%; left: 75%; }
         #p-LW { top: 35%; left: 20%; } #p-C { top: 40%; left: 50%; } #p-RW { top: 35%; left: 80%; }
@@ -120,7 +133,6 @@
         .stack-badge { position: absolute; bottom: -5px; right: -5px; background: #000; color: white; font-size: 0.75rem; font-weight: 800; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--surface-border); }
         .item-rarity-bar { position: absolute; top:0; left:0; right:0; height: 4px; border-radius:12px 12px 0 0; }
         
-        /* Akční tlačítka u hráčů v kabině */
         .player-actions { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
         .player-actions button { padding: 8px 10px; font-size: 0.65rem; border-radius: 8px; flex-grow: 1; }
         
@@ -296,24 +308,25 @@
     let db = JSON.parse(localStorage.getItem('fb_v9_5')) || {
         m: 10000, trophies: 0, trClaimed: [], p: [], lineup: {GK:null,LD:null,RD:null,LW:null,C:null,RW:null},
         b: Array(20).fill(null), sticks: [], shop: { bronz: true, silver: true, gold: true, drink: false, nextRefresh: 0 },
-        league: [{n:"Tatran",lvl:6,pts:0},{n:"Boleslav",lvl:8,pts:0}],
+        league: [{n:"Tatran",lvl:6,pts:0},{n:"Boleslav",lvl:8,pts:0},{n:"Vítkovice",lvl:7,pts:0}],
         lastMatchEnd: 0, teamName: "", firstMatchDone: false
     };
 
+    // Nová struktura odměn pro Trophy Road (balíčky i zlaťáky)
     const trData = [
-        { req: 10,  desc: "500 🪙", rw: 500 },
-        { req: 30,  desc: "1 000 🪙", rw: 1000 },
-        { req: 60,  desc: "2 000 🪙", rw: 2000 },
-        { req: 100, desc: "5 000 🪙", rw: 5000 },
-        { req: 150, desc: "10 000 🪙", rw: 10000 },
-        { req: 250, desc: "25 000 🪙", rw: 25000 }
+        { req: 10,  desc: "SPECIÁLNÍ BALÍČEK", type: "pack", minLvl: 2, maxLvl: 7 },
+        { req: 30,  desc: "1 000 🪙", type: "coin", rw: 1000 },
+        { req: 50,  desc: "5 000 🪙", type: "coin", rw: 5000 },
+        { req: 75,  desc: "200 🪙", type: "coin", rw: 200 },
+        { req: 100, desc: "KARTA LVL 11", type: "pack", minLvl: 11, maxLvl: 11 },
+        { req: 150, desc: "10 000 🪙", type: "coin", rw: 10000 }
     ];
 
+    // Systém pro florbalky funguje přesně tak, jak jsi popsal: Lvl 1: +5%, Lvl 2: +8%, Lvl 3: +10%, Lvl 4: +12% atd.
     const stickBuffs = [0, 5, 8, 10, 12, 14, 16, 18, 20, 25];
     const names = ["Filip","Lukáš","Matěj","Adam","Jakub","Tomáš","Petr","David","Honza","Vojta"];
     const sNames = ["Kysela","Němec","Dvořák","Marek","Horák","Beneš","Konečný","Kříž","Svoboda"];
 
-    // Migrace ze starších verzí a doplnění chybějících properties
     if(localStorage.getItem('fb_v9_4') && !localStorage.getItem('fb_v9_5')) {
         db = JSON.parse(localStorage.getItem('fb_v9_4'));
     }
@@ -326,7 +339,6 @@
     function save() { localStorage.setItem('fb_v9_5', JSON.stringify(db)); }
     function getAvatarUrl(seed) { return `https://api.dicebear.com/9.x/adventurer/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`; }
 
-    // CUSTOM MODAL
     function showModal(title, text, colorCode = 'var(--accent)') {
         document.getElementById('cm-title').innerText = title;
         document.getElementById('cm-title').style.color = colorCode;
@@ -390,7 +402,6 @@
         document.getElementById('ui-lvl').innerText = db.avgLvl;
     }
 
-    // MATCH LOGIKA
     function initMatch() {
         if(db.p.length < 6) return showModal("Chybí hráči", "Nemáš dostatek hráčů na sestavu!", "var(--red)");
         for(let pos in db.lineup) if(!db.lineup[pos]) return showModal("Sestava", "Vyplň celou sestavu před zápasem!", "var(--red)");
@@ -477,6 +488,15 @@
         else { mTitle = "PROHRA ❌"; mColor = "var(--red)"; extraText = "Soupeř byl lepší. Zkus vylepšit tým nebo poslat hráče pracovat!"; }
 
         db.p.forEach(h => { if(Object.values(db.lineup).includes(h.id)) h.e = Math.max(0, h.e - (Math.floor(Math.random() * 9) + 1)); });
+        
+        // Simulace bodů pro ostatní kluby (aby to nebylo jen o hráči)
+        db.league.forEach(t => {
+            if(!t.isP) {
+                let rnd = Math.random();
+                if(rnd < 0.4) t.pts += 3; // 40% šance na výhru pro AI klub
+                else if(rnd < 0.7) t.pts += 1; // 30% šance na remízu pro AI klub
+            }
+        });
 
         db.lastMatchEnd = Date.now(); 
 
@@ -484,7 +504,6 @@
         showModal(mTitle, extraText, mColor); save(); updateUI(); renderLeague();
     }
 
-    // TROPHY ROAD LOGIKA
     function openTrophyRoad() {
         let trList = document.getElementById('tr-list'); trList.innerHTML = '';
         let maxReq = trData[trData.length - 1].req;
@@ -511,13 +530,21 @@
         if(db.trClaimed.includes(index)) return;
         if(db.trophies < trData[index].req) return showModal("Zamčeno", "Na tuto odměnu nemáš dost pohárků!", "var(--red)");
         
-        db.m += trData[index].rw;
+        let node = trData[index];
         db.trClaimed.push(index);
-        save(); updateUI(); openTrophyRoad();
-        showModal("Odměna", `Získal jsi ${trData[index].desc}!`, "var(--gold)");
+        
+        if (node.type === "coin") {
+            db.m += node.rw;
+            showModal("Odměna", `Získal jsi ${node.desc}!`, "var(--gold)");
+            openTrophyRoad();
+        } else if (node.type === "pack") {
+            document.getElementById('tr-overlay').style.display = 'none';
+            openSpecialPack(node.minLvl, node.maxLvl, false);
+        }
+        
+        save(); updateUI();
     }
 
-    // GENERATE & PACK
     function generatePlayer(minLvl, maxLvl, specificPos) {
         let lvl = Math.floor(Math.random()*(maxLvl-minLvl+1))+minLvl;
         let id = Date.now();
@@ -579,7 +606,6 @@
         save(); updateUI(); renderBag();
     }
 
-    // SHOP & INVENTORY
     function checkShop() {
         let now = Date.now();
         if(now > db.shop.nextRefresh) { 
@@ -642,7 +668,7 @@
 
     function showDrinkTargets(slotIdx) {
         let ui = document.getElementById('use-item-ui'); let list = document.getElementById('drink-targets'); 
-        document.getElementById('item-sell-btn-container').innerHTML = ""; // No sell for drinks yet
+        document.getElementById('item-sell-btn-container').innerHTML = ""; 
         ui.style.display = 'block'; document.getElementById('use-item-title').innerText = "Doplnit Energii 🥤"; list.innerHTML = "";
         db.p.forEach(h => {
             let b = document.createElement('div'); b.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; background:rgba(0,0,0,0.3); border-radius:10px; margin-bottom:5px;";
@@ -688,7 +714,6 @@
         save(); updateUI(); renderBag();
     }
 
-    // KABINA A MANAGEMENT HRÁČŮ
     function renderSleep() {
         let div = document.getElementById('hraci-list'); div.innerHTML = ""; let now = Date.now();
         db.p.forEach(h => {
@@ -723,7 +748,13 @@
         });
     }
     
-    function startSleep(id) { let h = db.p.find(x => x.id === id); h.e = 100; h.lastSleep = Date.now(); h.sleepUntil = Date.now() + 60000; save(); renderSleep(); }
+    // Upravená funkce pro spánek (Hráč ze sestavy nemůže jít spát)
+    function startSleep(id) { 
+        if(Object.values(db.lineup).includes(id)) {
+            return showModal("Chyba", "Tento hráč je v základní sestavě a čeká na zápas! Pokud ho chceš poslat spát, nejdřív ho vystřídej na záložce TÝM.", "var(--red)");
+        }
+        let h = db.p.find(x => x.id === id); h.e = 100; h.lastSleep = Date.now(); h.sleepUntil = Date.now() + 60000; save(); renderSleep(); 
+    }
     
     function toggleWork(id) {
         let h = db.p.find(x => x.id === id);
@@ -734,7 +765,7 @@
             return showModal("Pozor", "Hráč právě spí!", "var(--red)");
         }
         h.working = !h.working;
-        h.workTicks = 0; // reset
+        h.workTicks = 0; 
         save(); renderSleep();
     }
 
@@ -745,7 +776,7 @@
         
         db.m += price;
         db.p = db.p.filter(p => p.id !== id);
-        if(h.stick) db.sticks.push(h.stick); // Vrať florbalku
+        if(h.stick) db.sticks.push(h.stick); 
         
         showModal("Prodej úspěšný", `Hráč ${h.n} byl prodán za ${price} 🪙.`, "var(--accent)");
         save(); renderSleep(); updateUI();
@@ -770,17 +801,18 @@
         db.p.filter(x => x.pos === pos).forEach(h => {
             let r = getRarity(h.lvl);
             let sInfo = h.stick ? `🏒 +${stickBuffs[h.stick.lvl]}%` : '';
-            let warn = h.working ? `<span style="color:var(--gold); font-size:0.7rem;">(V Práci)</span>` : '';
+            let warn = h.working ? `<span style="color:var(--gold); font-size:0.7rem;">(V Práci)</span>` : h.sleepUntil > Date.now() ? `<span style="color:var(--blue); font-size:0.7rem;">(Spí)</span>` : '';
             html += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.4); padding:10px; border-radius:10px; margin-bottom:10px; border-left:4px solid ${r.c}">
                 <div style="display:flex; align-items:center; gap:10px;"><img src="${getAvatarUrl(h.id)}" style="width:40px; height:40px; border-radius:50%; background:#000;">
                 <div><b>${h.n}</b> ${warn}<br><span style="font-size:0.6rem; color:${r.c}">${r.n}</span> <span style="font-size:0.6rem; color:var(--accent); font-weight:bold;">${sInfo}</span><br><span style="color:var(--text-muted); font-size:0.8rem; font-weight:bold;">Základ LVL ${h.lvl} | En ${h.e}%</span></div></div>
-                <button onclick="setPos('${pos}', ${h.id}, ${h.working})" style="width:auto; padding:8px 15px; background:${r.c}; color:#fff">ZVOLIT</button></div>`;
+                <button onclick="setPos('${pos}', ${h.id}, ${h.working}, ${h.sleepUntil})" style="width:auto; padding:8px 15px; background:${r.c}; color:#fff">ZVOLIT</button></div>`;
         });
         div.innerHTML = html + `<button onclick="this.parentElement.innerHTML=''" style="background:var(--surface-border); color:white; margin-top:10px;">ZAVŘÍT</button></div>`;
     }
     
-    function setPos(pos, id, isWorking) { 
+    function setPos(pos, id, isWorking, sleepUntil) { 
         if(isWorking) return showModal("Nelze vybrat", "Tento hráč momentálně pracuje. Běž do sekce Hráči a ukonči mu směnu.", "var(--gold)");
+        if(sleepUntil > Date.now()) return showModal("Nelze vybrat", "Tento hráč zrovna spí. Počkej, až se vzbudí.", "var(--blue)");
         db.lineup[pos] = id; renderField(); save(); document.getElementById('select-box').innerHTML=''; updateUI(); 
     }
 
@@ -790,7 +822,6 @@
         document.getElementById('liga-tabulka').innerHTML = html + "</table>";
     }
 
-    // Centrální časovač hry
     setInterval(() => {
         let now = Date.now();
         if(now > db.shop.nextRefresh) checkShop();
@@ -801,7 +832,6 @@
         
         if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep();
 
-        // Work Logic (Každých 5 sekund přidá peníze pracujícím)
         let workMoneyGained = 0;
         db.p.forEach(h => {
             if(h.working) {
@@ -818,7 +848,6 @@
             save();
         }
 
-        // Match Cooldown Logic
         if(db.lastMatchEnd > 0) {
             let matchAreaVisible = document.getElementById('match-area').style.display === 'block';
             let cdLeft = Math.ceil((db.lastMatchEnd + 30000 - now) / 1000);
