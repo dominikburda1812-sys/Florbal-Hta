@@ -1,28 +1,35 @@
-import { useState, useEffect } from 'react';
+// Příklad moderní karty zápasu s Tailwind CSS
+export default function NextMatchCard({ myTeam, opponent }) {
+  return (
+    <div className="bg-slate-800 rounded-2xl p-6 shadow-2xl max-w-md mx-auto border border-slate-700">
+      <h2 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4">
+        Další Zápas • Ligové kolo 5
+      </h2>
+      
+      <div className="flex justify-between items-center mb-6">
+        {/* Můj Tým */}
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-lg mb-2">
+            {myTeam.substring(0, 3).toUpperCase()}
+          </div>
+          <span className="text-white font-semibold">{myTeam}</span>
+        </div>
 
-export default function Game() {
-  // Načtení z localStorage, pokud tam už něco je
-  const [teamName, setTeamName] = useState("");
-  const [isLoaded, setIsLoaded] = useState(false);
+        {/* VS */}
+        <div className="text-2xl font-black text-slate-500 italic">VS</div>
 
-  useEffect(() => {
-    const savedName = localStorage.getItem("mySportsTeam");
-    if (savedName) setTeamName(savedName);
-    setIsLoaded(true);
-  }, []);
+        {/* Soupeř */}
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-lg mb-2">
+            {opponent.substring(0, 3).toUpperCase()}
+          </div>
+          <span className="text-white font-semibold">{opponent}</span>
+        </div>
+      </div>
 
-  const handleStartGame = (name) => {
-    setTeamName(name);
-    localStorage.setItem("mySportsTeam", name);
-  };
-
-  if (!isLoaded) return <div>Načítám...</div>;
-
-  // ZDE JE TA BRÁNA: Pokud není jméno, ukaž obrazovku pro tvorbu týmu
-  if (!teamName) {
-    return <CreateTeamScreen onStart={handleStartGame} />;
-  }
-
-  // Pokud jméno má, ukaž hlavní hru
-  return <MainDashboard teamName={teamName} />;
+      <button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-3 rounded-xl transition-all duration-300 transform hover:scale-105">
+        VSTOUPIT DO ZÁPASU
+      </button>
+    </div>
+  );
 }
