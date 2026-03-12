@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Floorball Manager v9.6 Ultimate</title>
+    <title>Floorball Manager v9.7 Ultimate</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -23,7 +23,6 @@
             overflow-x: hidden; user-select: none; 
         }
         
-        /* Moderní skleněný efekt alá FIFA/Top Eleven */
         #scr-match { background: radial-gradient(circle at center top, rgba(0, 255, 136, 0.05) 0%, transparent 80%); }
         #scr-sleep { background: radial-gradient(circle at center top, rgba(0, 229, 255, 0.1) 0%, transparent 80%); }
         #scr-profile { background: radial-gradient(circle at center top, rgba(168, 85, 247, 0.05) 0%, transparent 80%); }
@@ -34,16 +33,10 @@
 
         h3 { color: var(--text); text-transform: uppercase; letter-spacing: 1.5px; font-size: 1.1rem; border-left: 4px solid var(--accent); padding-left: 10px; margin-top: 0; text-shadow: 0 0 15px rgba(0,255,136,0.4); }
         
-        /* Vylepšené karty - FUT styl */
         .card { 
             background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8)); 
-            backdrop-filter: blur(12px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-            border-radius: 20px; 
-            padding: 20px; 
-            margin-bottom: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 2px 10px rgba(255,255,255,0.02); 
-            transition: transform 0.2s, box-shadow 0.2s;
+            backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; 
+            padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 2px 10px rgba(255,255,255,0.02); 
         }
         
         button { background: linear-gradient(45deg, var(--accent), #00cc6a); color: #000; border: none; padding: 15px; border-radius: 14px; font-weight: 900; width: 100%; cursor: pointer; text-transform: uppercase; transition: all 0.2s; letter-spacing: 1px; box-shadow: 0 6px 20px rgba(0,255,136,0.3); }
@@ -72,25 +65,21 @@
         .modal-title { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; margin-bottom: 15px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; }
         .modal-text { color: var(--text); font-size: 1.05rem; margin-bottom: 30px; line-height: 1.6; white-space: pre-line; font-weight: 700; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
 
-        /* VYLEPŠENÝ TROPHY ROAD (BRAWL STARS STYL) */
+        /* TROPHY ROAD (BRAWL STARS STYL) */
         .trophy-road-btn { background: linear-gradient(135deg, #ff6b00, #ffb700); color: #000; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 16px; font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 1px; margin-bottom: 25px; cursor: pointer; box-shadow: 0 8px 25px rgba(255, 107, 0, 0.5); border: 2px solid rgba(255,255,255,0.6); transition: 0.2s; font-size: 1.2rem; text-transform: uppercase; }
         .trophy-road-btn:active { transform: scale(0.95); }
         
         #tr-overlay { 
             position: fixed; inset: 0; z-index: 5500; display: none; flex-direction: column; padding: 20px; padding-top: 50px;
-            /* Nové tématické pozadí pro Trophy Road */
             background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(5, 8, 15, 0.98) 100%), url('1773165632248.png') no-repeat center center;
-            background-size: cover;
-            backdrop-filter: blur(10px);
+            background-size: cover; backdrop-filter: blur(10px);
         }
         .tr-header { text-align: center; font-family: 'Orbitron', sans-serif; color: var(--gold); font-size: 2.2rem; margin-bottom: 30px; text-shadow: 0 0 20px var(--gold-glow); letter-spacing: 2px; }
         .tr-track-container { width: 100%; overflow-x: auto; padding: 80px 0 60px 0; position: relative; display: flex; align-items: center; scroll-behavior: smooth; }
         
-        /* Tlustší čára a indikátor ve stylu Brawl Stars */
         .tr-line { position: absolute; top: 50%; left: 0; height: 18px; background: #1e293b; width: max-content; min-width: 100%; z-index: 1; transform: translateY(-50%); border-radius: 10px; box-shadow: inset 0 3px 6px rgba(0,0,0,0.8), 0 0 0 2px rgba(255,255,255,0.05); }
         .tr-line-fill { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg, #ff6b00, var(--gold)); border-radius: 10px; box-shadow: 0 0 25px #ff6b00; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        /* Marker aktuálních pohárků */
         .tr-current-marker {
             position: absolute; right: -30px; top: -50px; background: #0b132b; color: var(--gold);
             padding: 6px 14px; border-radius: 12px; font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 900;
@@ -122,8 +111,7 @@
         #match-area { 
             width: 100%; height: 35vh; min-height: 260px; border-radius: 20px; position: relative; overflow: hidden; display: none; 
             background: url('1773165633895.png') no-repeat center center;
-            background-size: cover;
-            border: 2px solid rgba(255,255,255,0.1); margin-bottom: 25px; box-shadow: inset 0 0 80px rgba(0,0,0,0.8); 
+            background-size: cover; border: 2px solid rgba(255,255,255,0.15); margin-bottom: 20px; box-shadow: inset 0 0 60px rgba(0,0,0,0.7); 
         }
         .center-circle { position: absolute; width: 70px; height: 70px; border: 2px solid rgba(255,255,255,0.25); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 0; box-shadow: inset 0 0 20px rgba(255,255,255,0.05); }
         .center-line { position: absolute; width: 2px; height: 100%; background: rgba(255,255,255,0.25); top: 0; left: 50%; transform: translateX(-50%); z-index: 0; }
@@ -139,10 +127,7 @@
         .tactical-field { 
             width: 100%; height: 290px; 
             background: url('1773165633895.png') no-repeat center center;
-            background-size: cover;
-            border: 2px solid rgba(255,255,255,0.15); 
-            border-radius: 20px; position: relative; overflow: hidden; 
-            box-shadow: inset 0 0 60px rgba(0,0,0,0.8);
+            background-size: cover; border: 3px solid rgba(255,255,255,0.2); border-radius: 16px; position: relative; overflow: hidden; box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
         }
         .pos-slot { position: absolute; width: 60px; height: 60px; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 10; }
         .pos-avatar { width: 50px; height: 50px; border-radius: 50%; background: #0b132b; border: 3px solid var(--surface-border); overflow: hidden; display: flex; justify-content: center; align-items: flex-end; position: relative; box-shadow: 0 6px 20px rgba(0,0,0,0.7); }
@@ -208,7 +193,8 @@
         <div class="tr-track-container" id="tr-scroll">
             <div class="tr-line">
                 <div class="tr-line-fill" id="tr-fill-bar">
-                    </div>
+                    <div class="tr-current-marker" id="tr-marker">0 🏆</div>
+                </div>
             </div>
             <div class="tr-nodes" id="tr-list"></div>
         </div>
@@ -314,7 +300,7 @@
                 <b style="font-size:1.3rem; color: var(--accent);">FREEZ Balíček</b><br>
                 <span style="font-size:0.85rem; color:var(--text-muted); line-height: 1.5; display: inline-block; margin-top: 5px;">Obsahuje FREEZ florbalku (Lvl 1-9)<br>Vylepšuje statistiky jednoho hráče.</span>
             </div>
-            <button onclick="buyStickPack()">KOUPIT BALÍČEK (3 000 🪙)</button>
+            <button onclick="buyStickPack()" style="background:var(--accent); color:black;">KOUPIT BALÍČEK (3 000 🪙)</button>
         </div>
     </div>
 
@@ -344,7 +330,10 @@
     </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('fb_v9_6')) || {
+    // OPRAVA 1: Změnil jsem klíč, takže se hra zresetuje a nabídne ti vytvoření týmu.
+    const SAVE_KEY = 'fb_v9_7_reset'; 
+
+    let db = JSON.parse(localStorage.getItem(SAVE_KEY)) || {
         m: 10000, trophies: 0, trClaimed: [], p: [], lineup: {GK:null,LD:null,RD:null,LW:null,C:null,RW:null},
         b: Array(20).fill(null), sticks: [], shop: { bronz: true, silver: true, gold: true, drink: false, nextRefresh: 0 },
         league: [{n:"Tatran",lvl:6,pts:0},{n:"Boleslav",lvl:8,pts:0},{n:"Vítkovice",lvl:7,pts:0}],
@@ -364,20 +353,13 @@
         { req: 300, desc: "VELKÝ BALÍČEK", type: "pack", minLvl: 2, maxLvl: 9 }
     ];
 
-    const stickBuffs = [0, 5, 8, 10, 12, 14, 16, 18, 20, 25];
+    // OPRAVA 2: Index pole nyní odpovídá Levelu hole. Lvl 1 = +5%, Lvl 2 = +8% atd.
+    const stickBuffs = [0, 5, 8, 10, 12, 14, 16, 18, 20, 22, 25]; 
+    
     const names = ["Filip","Lukáš","Matěj","Adam","Jakub","Tomáš","Petr","David","Honza","Vojta"];
     const sNames = ["Kysela","Němec","Dvořák","Marek","Horák","Beneš","Konečný","Kříž","Svoboda"];
 
-    if(localStorage.getItem('fb_v9_5') && !localStorage.getItem('fb_v9_6')) {
-        db = JSON.parse(localStorage.getItem('fb_v9_5'));
-    }
-    db.p.forEach(h => {
-        if(typeof h.working === 'undefined') h.working = false;
-        if(typeof h.workTicks === 'undefined') h.workTicks = 0;
-    });
-    if(!db.trClaimed) db.trClaimed = [];
-
-    function save() { localStorage.setItem('fb_v9_6', JSON.stringify(db)); }
+    function save() { localStorage.setItem(SAVE_KEY, JSON.stringify(db)); }
     function getAvatarUrl(seed) { return `https://api.dicebear.com/9.x/adventurer/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`; }
 
     function showModal(title, text, colorCode = 'var(--accent)', icon = '') {
@@ -441,8 +423,9 @@
         for(let pos in db.lineup) {
             let h = db.p.find(x => x.id === db.lineup[pos]);
             if(h) { 
+                // OPRAVA 3: Přesný výpočet vlivu florbalek na level týmu
                 let b = h.stick ? stickBuffs[h.stick.lvl] : 0;
-                sum += h.lvl * (1 + b/100); 
+                sum += h.lvl * (1 + (b / 100)); 
                 count++; 
             }
         }
@@ -462,9 +445,17 @@
         }
         if(issue) return showModal("Sestava není připravena", issue, "var(--red)", "🚫");
 
-        let oppLvl = (db.avgLvl <= 10) ? Math.floor(Math.random()*8)+1 : Math.floor(Math.random()*15)+8;
+        // OPRAVA 4: Striktní max level 8 soupeře, pokud je hráč <= 10
+        let oppLvl;
+        if (db.avgLvl <= 10) {
+            oppLvl = Math.floor(Math.random() * 8) + 1;
+        } else {
+            oppLvl = db.avgLvl + Math.floor(Math.random() * 7) - 3;
+        }
+        
         document.getElementById('opp-lvl-display').innerText = `Soupeř Lvl: ${oppLvl}`;
         
+        // OPRAVA 5: Přesně stanovené šance na výhru dle tvé tabulky
         let diff = db.avgLvl - oppLvl;
         let prob;
         if (diff <= -8) prob = 1;
@@ -477,9 +468,10 @@
         else if (diff === -1) prob = 50;
         else if (diff === 0) prob = 67;
         else if (diff === 1) prob = 75;
-        else prob = 99;
+        else prob = 99; // diff >= 2
 
         let roll = Math.random() * 100;
+        // OPRAVA 6: První zápas je vždy výhra
         let result = (!db.firstMatchDone || roll < prob) ? "win" : (roll < prob + 10) ? "draw" : "loss";
 
         startMatchAnimation(result);
@@ -574,13 +566,10 @@
         let trList = document.getElementById('tr-list'); trList.innerHTML = '';
         let maxReq = trData[trData.length - 1].req;
         
-        // Zabezpečení, že to nepůjde nad 100 % (Brawl Stars logika)
         let fillPct = Math.min(100, (db.trophies / maxReq) * 100);
-        
-        // Dynamický marker pro počet pohárků
         let fillBar = document.getElementById('tr-fill-bar');
         fillBar.style.width = fillPct + "%";
-        fillBar.innerHTML = `<div class="tr-current-marker">${db.trophies} 🏆</div>`;
+        document.getElementById('tr-marker').innerText = `${db.trophies} 🏆`;
 
         trData.forEach((node, i) => {
             let isUnl = db.trophies >= node.req;
@@ -772,7 +761,7 @@
             let sInfo = h.stick ? `<br><span style="font-size:0.8rem; color:var(--text-muted); font-weight:800;">Aktuálně: Lvl ${h.stick.lvl}</span>` : '';
             b.innerHTML = `<div><b style="font-size:1.1rem;">${h.n}</b>${sInfo}</div>`;
             
-            let btn = document.createElement('button'); btn.innerText = "VYBAVIT"; btn.style.cssText = "width:auto; padding:10px 20px;";
+            let btn = document.createElement('button'); btn.innerText = "VYBAVIT"; btn.style.cssText = "width:auto; padding:10px 20px; background:var(--accent);";
             btn.onclick = () => { 
                 if(h.stick) db.sticks.push(h.stick); 
                 h.stick = db.sticks.splice(stickIdx, 1)[0]; 
@@ -907,6 +896,7 @@
         
         if(document.getElementById('scr-sleep').classList.contains('active')) renderSleep();
 
+        // 1 zlaťák za level každých 5 sekund (1 tick = 1 sekunda)
         let workMoneyGained = 0;
         db.p.forEach(h => {
             if(h.working) {
